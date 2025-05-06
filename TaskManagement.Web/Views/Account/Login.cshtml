@@ -1,0 +1,157 @@
+﻿@model TaskManagement.Model.ViewModel.LoginViewModel;
+@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Anzenn Safety Alerts</title>
+    <link rel="stylesheet" href="~/assets/css/common.css">
+</head>
+<body class="login-bg">
+    <section class="main-dev-for-all elementes-center position-relative">
+        <div class="containerc">
+            <div class="common-box box-style margin-auto position-relative after-po w-100">
+                <div class="uper-bx">
+
+                    <form asp-action="Login" asp-controller="Account" id="frmLogin" method="post" class="form" autocomplete="off">
+                        @Html.AntiForgeryToken()
+
+                        <div id="divLoginForm"
+                             class="login-form margin-auto">
+
+                            <div class="typography-div">
+                                <div class="bx-main-title">
+                                    <h1>Welcome!</h1>
+                                </div>
+                            </div>
+
+                          @*   <div class="form-floating position-relative">
+                                <input id="txtEmail"
+                                       translate="no"
+                                       class="form-control"
+                                       placeholder
+                                       tabindex="1"
+                                       autofocus=""
+                                       type="text"
+                                       name="Email"
+                                       value="">
+                                <label class="form-label position-absolute"
+                                       data-name="required"
+                                       for="txtEmail">
+                                    Email
+                                </label>
+                            </div>
+
+                            <div class="form-floating position-relative">
+                                <input id="txtPassword"
+                                       translate="no"
+                                       type="password"
+                                       placeholder
+                                       class="form-control"
+                                       tabindex="2"
+                                       name="Password">
+                                <label class="form-label position-absolute"
+                                       for="txtPassword">
+                                    Password
+                                </label>
+                            </div> *@
+
+                            <div class="form-floating position-relative">
+                                <input asp-for="Email" class="form-control" id="txtEmail" placeholder="Email" />
+                                <label asp-for="Email" class="form-label position-absolute"></label>
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+
+                            <div class="form-floating position-relative">
+                                <input asp-for="Password" type="password" class="form-control" id="txtPassword" placeholder="Password" />
+                                <label asp-for="Password" class="form-label position-absolute"></label>
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+
+                            <div class="text-right">
+                                <div class="btn-group ">
+                                    <button id="btnLogin"
+                                            type="button"
+                                            tabindex="3"
+                                            class="btn-invite">
+                                        <span>Login</span>&nbsp; &nbsp;
+                                        <span class="nt-arrow-right"></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <div class="loading-wrapper">
+        <div class="loading-content">
+        </div>
+        <div class="loading-text position-absolute">
+            Loading...
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="~/assets/js/script.js"></script>
+    <script>
+        // Enable validation
+        $(function () {
+            // Trigger validation on focus out
+            $('input').on('blur', function () {
+                $(this).valid(); // validate this input
+            });
+
+            // Optional: remove error message on focus in
+            $('input').on('focus', function () {
+                const span = $(this).siblings('span.text-danger');
+                span.text('');
+            });
+
+            // On login button click
+            $('#btnLogin').click(function () {
+                if ($('#frmLogin').valid()) {
+                    let formData = {
+                        Email: $('#txtEmail').val(),
+                        Password: $('#txtPassword').val()
+                    };
+                    showLoader();
+                    $.ajax({
+                        url: '@Url.Action("Login", "Account")',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(formData),
+                        headers: {
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                window.location.href = response.redirectUrl || '/dashboard';
+                            } else {
+                                alert(response.message || "Invalid login.");
+                            }
+                        },
+                        error: function (err) {
+                            alert("Something went wrong.");
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+
+
+</body>
+</html>

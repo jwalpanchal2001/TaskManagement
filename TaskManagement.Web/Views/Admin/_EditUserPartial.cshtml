@@ -1,0 +1,48 @@
+﻿@model TaskManagement.Model.Dto.UserDto
+
+<div id="drawerEditUser" class="drawer">
+    <div class="overlay" style="display: none;"></div>
+    <div class="drawer-inner">
+        <div class="drawer-title">
+            <a title="back" onclick="Common.closeDrawer('#drawerEditUser')">
+                <i class="nt-angle-prev"></i>
+            </a>
+            <h1>Edit User</h1>
+        </div>
+
+        <form id="editUserForm" class="drawer-form view-drawer" asp-action="UpdateUser" asp-controller="Admin" method="post">
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="row">
+                <div class="form-title">User Information</div>
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Email</div>
+                    <div class="data-val">
+                        <input type="text" asp-for="Username" class="form-control" required minlength="3" maxlength="100" />
+                        <span asp-validation-for="Username" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Full Name</div>
+                    <div class="data-val">
+                        <input type="text" asp-for="FullName" class="form-control" maxlength="100" />
+                        <span asp-validation-for="FullName" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="invite-botttom">
+                <button type="submit" class="btn-invite">Update</button>
+                <a class="cancel" onclick="Common.closeDrawer('#drawerEditUser')">
+                    <i class="nt-backward"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,64 @@
+﻿@model TaskManagement.Model.Dto.UserDto
+
+<div id="drawerViewUser" class="drawer">
+    <div class="overlay" style="display: none;"></div>
+    <div class="drawer-inner">
+        <div class="drawer-title">
+            <a title="back" onclick="Common.closeDrawer('#drawerViewUser')">
+                <i class="nt-angle-prev"></i>
+            </a>
+            <h1>User Details</h1>
+        </div>
+
+        <form class="drawer-form view-drawer">
+            <div class="row">
+                <div class="form-title">
+                    User Summary
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">
+                        Full Name
+                    </div>
+                    <div class="data-val">
+                        @Model.FullName
+                    </div>
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">
+                        Username/Email
+                    </div>
+                    <div class="data-val">
+                        @Model.Username
+                    </div>
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">
+                        User ID
+                    </div>
+                    <div class="data-val">
+                        @Model.Id
+                    </div>
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">
+                        Role
+                    </div>
+                    <div class="data-val">
+                        @(Model.IsAdmin ? "Administrator" : "Regular User")
+                    </div>
+                </div>
+            </div>
+
+            <div class="invite-botttom">
+                <a class="cancel" onclick="Common.closeDrawer('#drawerViewUser')">
+                    <i class="nt-backward"></i>
+                    Close
+                </a>
+            </div>
+        </form>
+    </div>
+</div>

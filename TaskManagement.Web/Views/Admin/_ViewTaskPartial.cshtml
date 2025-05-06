@@ -1,0 +1,149 @@
+﻿@using System.Web
+@model TaskManagement.Model.Dto.TaskDto
+
+<div id="drawerViewTask" class="drawer">
+    <div class="overlay" style="display: none;"></div>
+    <div class="drawer-inner">
+        <div class="drawer-title">
+            <a title="back" onclick="Common.closeDrawer('#drawerViewTask')">
+                <i class="nt-angle-prev"></i>
+            </a>
+            <h1>Task View</h1>
+        </div>
+
+        <form class="drawer-form view-drawer">
+            <div class="row">
+                <div class="form-title">
+                    Task Summary
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Title</div>
+                    <div class="data-val">@Model.Title</div>
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Status</div>
+                    <div class="data-val">@Model.TaskStatus</div>
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Task ID</div>
+                    <div class="data-val">@Model.Id</div>
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Created On</div>
+                    <div class="data-val">@Model.CreatedAt.ToString("MMM dd, yyyy")</div>
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Due Date</div>
+                    <div class="data-val">@(Model.DueDate?.ToString("MMM dd, yyyy") ?? "No due date")</div>
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Assigned To</div>
+                    <div class="data-val">@(Model.UserName ?? "Unassigned")</div>
+                </div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Created By</div>
+                    <div class="data-val">@Model.CreatedByName</div>
+                </div>
+
+                <div class="col-lg-12 data-detail">
+                    <div class="data-label">Description</div>
+                    <div class="data-val">@(string.IsNullOrEmpty(Model.Description) ? "No description provided" : Model.Description)</div>
+                </div>
+            </div>
+
+            <div class="row task-details-section">
+                <div class="form-title">
+                    Task Details
+                </div>
+
+                @if (Model.TaskDetails != null && Model.TaskDetails.Any())
+                {
+                    foreach (var detail in Model.TaskDetails.OrderByDescending(d => d.CreatedAt))
+                    {
+                        <div class="col-lg-12 data-detail" id="detail-@detail.Id">
+                            <div class="data-label">
+                                Created At: @detail.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")
+                                <div class="detail-actions" style="float: right;">
+                                    <a href="javascript:void(0)"
+                                       class="text-danger delete-detail"
+                                       data-id="@detail.Id"
+                                       title="Delete">
+                                        <i class="nt-bin"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="data-val detail-content">
+                                @detail.Description
+                            </div>
+                            <div class="data-val edit-detail-form" style="display: none;">
+                                <textarea class="form-control mb-2" data-edit-id="@detail.Id">@detail.Description</textarea>
+                                <button class="btn btn-sm btn-primary save-detail" data-id="@detail.Id">Save</button>
+                                <button class="btn btn-sm btn-secondary ml-2 cancel-edit" data-id="@detail.Id">Cancel</button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-lg-12 data-detail no-details">
+                        <div class="data-val" style="font-style: italic;">
+                            No activity logged yet
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="invite-bottom">
+                <a class="cancel" onclick="Common.closeDrawer('#drawerViewTask')">
+                    <i class="nt-backward"></i>
+                    Close
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $(document).on('click', '.delete-detail', function () {
+            const detailId = $(this).attr('data-id');
+            console.log(detailId); // ID is logged
+            if (!detailId) {
+                alert('Error: Task detail ID is missing.');
+                return;
+            }
+            deleteTaskDetail(detailId);
+        });
+
+        function deleteTaskDetail(detailId) {
+            console.log(detailId); // ID is logged
+            if (!confirm('Are you sure you want to delete this activity log?')) return;
+
+                $.post(
+                '/admin/deleteDetail',
+                { detailId: detailId },
+                function (res) {
+                    $(`#detail-${detailId}`).remove();
+                    if ($('.task-details-section .data-detail[id^="detail-"]').length === 0) {
+                        $('.task-details-section').append(`
+                            <div class="col-lg-12 data-detail no-details">
+                                <div class="data-val" style="font-style: italic;">
+                                    No activity logged yet
+                                </div>
+                            </div>
+                        `);
+                    }
+                }
+                ).fail(function (xhr) {
+                    alert('Error deleting detail: ' + (xhr.responseText || 'Unknown error'));
+                });
+        }
+    });
+</script>

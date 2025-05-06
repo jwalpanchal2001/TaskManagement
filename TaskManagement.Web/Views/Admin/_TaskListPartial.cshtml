@@ -1,0 +1,64 @@
+﻿@model IEnumerable<TaskManagement.Model.Dto.TaskDto>
+
+<div class="alerts-content">
+    @foreach (var task in Model)
+    {
+        <div class="alerts-content-single">
+            <div class="alerts-content-inner">
+                <div class="content-main">
+                    <div class="content-title">
+                        <span>@task.Title</span>
+                    </div>
+                    <div class="content-desc">
+                        @task.Description
+                    </div>
+                </div>
+            </div>
+
+            <div class="alerts-content-inner">
+                <div class="content-main">
+                    <div class="content-desc">
+                        <span>Status: @task.TaskStatus</span>
+                        @if (task.DueDate.HasValue)
+                        {
+                            <span> | Due: @task.DueDate.Value.ToString("MMM dd, yyyy")</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="alerts-content-inner">
+                <div class="content-main">
+                    <div class="content-last">
+                        <span class="closed btn-all-case">
+                            <i class="nt-tick"></i>
+                            <span class="alert-text">
+                                @task.CreatedByName
+                            </span>
+                        </span>
+
+                        <div class="edit-links">
+                            <em class="nt-more"></em>
+                            <div class="link-box">
+                                <div class="link view-task-btn" data-task-id="@task.Id">
+                                    <em class="nt-eye"></em>
+                                    View
+                                </div>
+
+                                <div class="link edit-task-btn" data-task-id="@task.Id">
+                                    <em class="nt-edit"></em>
+                                    Edit
+                                </div>
+
+                                <div class="link delete-task" data-taskid="@task.Id">
+                                    <em class="nt-bin"></em>
+                                    Delete
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

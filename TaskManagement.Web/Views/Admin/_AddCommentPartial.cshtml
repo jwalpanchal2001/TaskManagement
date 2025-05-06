@@ -1,0 +1,72 @@
+﻿@model TaskManagement.Model.Dto.UserTask.CreateTaskDetailDto;
+<div id="drawerAddComment" class="drawer">
+    <div class="overlay" style="display: none;"></div>
+    <div class="drawer-inner">
+        <div class="drawer-title">
+            <a title="back" onclick="Common.closeDrawer('#drawerAddComment')">
+                <i class="nt-angle-prev"></i>
+            </a>
+            <h1>Add Comment</h1>
+        </div>
+
+        <form id="addCommentForm" class="drawer-form view-drawer"
+              asp-action="AddComment" asp-controller="Admin" method="post">
+            <div id="validationSummary" class="text-danger mb-2"></div>
+            <input type="hidden" asp-for="TaskId" />
+
+            <div class="row">
+                <div class="col-lg-12 data-detail">
+                    <div class="data-label">Comment</div>
+                    <div class="data-val">
+                        <textarea asp-for="Description" class="form-control" rows="4" required></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="invite-botttom">
+                <button type="submit" class="btn-invite">Save</button>
+                <a class="cancel" onclick="Common.closeDrawer('#drawerAddComment')">
+                    <i class="nt-backward"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(function() {
+        $('#addCommentForm').on('submit', function(e) {
+            e.preventDefault();
+
+            if (!$(this).valid()) {
+                return;
+            }
+
+            Common.showLoader();
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        Common.closeDrawer('#drawerAddComment');
+                        showToast('success', 'Comment added successfully');
+                        // Optionally refresh comments section
+                    } else {
+                        $('#validationSummary').html(response.message);
+                    }
+                },
+                error: function(xhr) {
+                    $('#validationSummary').html(xhr.responseJSON?.message || 'An error occurred');
+                },
+                complete: function() {
+                    Common.hideLoader();
+                }
+            });
+        });
+    });
+
+</script>

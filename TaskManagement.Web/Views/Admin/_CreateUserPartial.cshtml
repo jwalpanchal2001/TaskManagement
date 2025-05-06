@@ -1,0 +1,48 @@
+﻿@model TaskManagement.Model.Dto.CreateUserDto
+
+<div class="drawer-title">
+    <a title="back" onclick="Common.closeDrawer('#drawerAddEditProject')">
+        <i class="nt-angle-prev"></i>
+    </a>
+    <h1>Create User</h1>
+</div>
+
+<form id="createUserForm" class="drawer-form view-drawer" asp-action="Create" asp-controller="Admin" method="post">
+    @* <div asp-validation-summary="All" class="text-danger mb-2"></div> *@
+
+    <div class="row">
+        <div class="form-title">User Information</div>
+
+        <div class="col-lg-6 data-detail">
+            <div class="data-label">Email</div>
+            <div class="data-val">
+                <input asp-for="Username" class="form-control" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="col-lg-6 data-detail">
+            <div class="data-label">Password</div>
+            <div class="data-val">
+                <input asp-for="Password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="col-lg-6 data-detail">
+            <div class="data-label">Full Name</div>
+            <div class="data-val">
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="invite-botttom">
+        <button type="submit" class="btn-invite">Save</button>
+        <a class="cancel" onclick="Common.closeDrawer('#drawerAddEditProject')">
+            <i class="nt-backward"></i>
+            Cancel
+        </a>
+    </div>
+</form>

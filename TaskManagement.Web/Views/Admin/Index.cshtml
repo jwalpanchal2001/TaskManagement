@@ -1,0 +1,299 @@
+﻿@model List<TaskManagement.Model.Dto.UserDto>
+@{
+	ViewData["Title"] = "Index";
+}
+
+
+
+@* <!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Safety Alerts</title>
+	<link rel="stylesheet" href="~/assets/css/common.css">
+	<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+
+<body> *@
+	<section class="main">
+
+		<div id="drawerAddEditProject" class="drawer">
+			<div class="overlay" style="display: none;"></div>
+			<div class="drawer-inner">
+				@await Html.PartialAsync("_CreateUserPartial", new TaskManagement.Model.Dto.CreateUserDto())	
+			</div>
+		</div>
+			
+		<div id="drawerViewUser"></div>
+		<div id="drawerEditUser"></div>
+
+		<div class="container">
+
+			<div class="alerts-main">
+
+				<div class="view-switcher">
+					<div class="row">
+					<a href="@Url.Action("Index", "Admin")"
+					   class="btn-invite col-2 @(ViewContext.RouteData.Values["Action"].ToString() == "Index" ? "active" : "")"
+					   data-view="users">
+						Users
+					</a>
+					<a href="@Url.Action("TaskIndex", "Admin")"
+					   class="btn-invite col-2 @(ViewContext.RouteData.Values["Action"].ToString() == "TaskIndex" ? "active" : "")"
+					   data-view="tasks" style="margin-left:10px">
+						Tasks
+					</a>
+				</div>
+					<div class="alerts-title">
+						<!-- Your existing title content -->
+					</div>
+				</div>
+
+
+				<div class="alerts-title">
+
+					<h1>
+						User List
+					</h1>
+
+					<div class="alerts-icon">
+
+						<ul>
+
+							<li>
+								<div class="icon">
+
+									<i class="nt-filter" title="Filter"
+									   onclick="Common.showFilter(this, '#divFilters')">
+									</i>
+
+									<div id="divFilters" class="filter-sorting">
+
+										<div class="filter-sorting-title">
+											<p>
+												Filters
+											</p>
+											<a title="close" class="close" onclick="Common.hideFilter('#divFilters')">
+												<span class="nt-close-o"></span>
+											</a>
+										</div>
+
+										<form class="mt-3">
+
+											<div class="row">
+
+												<div class="col-lg-12 form-floating">
+													<input id="txtFilterProjectName" type="text" class="form-control"
+														   placeholder="" value="">
+													<label for="txtFilterProjectName">
+														Project Name
+													</label>
+												</div>
+
+												<div class="col-lg-12 form-floating">
+													<input id="txtFilterProjectCode" type="text" class="form-control"
+														   placeholder="" value="">
+													<label for="txtFilterProjectCode">
+														Project Code
+													</label>
+												</div>
+
+											</div>
+
+										</form>
+
+										<div class="apply-botttom">
+
+											<a class="cancel">
+												<span class="nt-refresh"></span>
+												Reset
+											</a>
+
+											<a class="btn-apply">
+												Apply Filter
+											</a>
+
+										</div>
+
+									</div>
+
+								</div>
+
+							</li>
+
+							<li>
+								<div class="icon">
+
+									<i class="nt-sort" title="Sort" onclick="Common.showFilter(this, '#divSorting')">
+									</i>
+
+									<div id="divSorting" class="filter-sorting">
+
+										<div class="filter-sorting-title">
+											<p>
+												Sort by
+											</p>
+											<a title="close" class="close" onclick="Common.hideFilter('#divSorting')">
+												<span class="nt-close-o"></span>
+											</a>
+										</div>
+
+										<div class="form-tabs">
+
+											<ul class="ass-des">
+												<li class="active">
+													Ascending
+												</li>
+												<li>
+													Desending
+												</li>
+											</ul>
+
+											<div class="form-check mb-3">
+												<input id="rbProjectName" class="form-check-input" type="radio"
+													   name="sortListing">
+												<label class="form-check-label" for="rbProjectName">
+													Project Name
+												</label>
+											</div>
+
+											<div class="form-check mb-5">
+												<input id="rbProjectCode" class="form-check-input" type="radio"
+													   name="sortListing">
+												<label class="form-check-label" for="rbProjectCode">
+													Project Code
+												</label>
+											</div>
+
+										</div>
+
+
+										<div class="apply-botttom">
+											<a class="cancel">
+												<span class="nt-refresh"></span>
+												Reset
+											</a>
+											<a title="invite" class="btn-apply">
+												Apply Sort
+											</a>
+										</div>
+
+									</div>
+									</a>
+									</div>
+
+							</li>
+
+							<li class="invite">
+								<a title="invite" class="btn-invite"
+								   onclick="Common.openDrawer('#drawerAddEditProject')">
+									Add User
+								</a>
+							</li>
+
+						</ul>
+
+					</div>
+
+				</div>
+
+
+				<div class="alerts-content">
+					@foreach (var user in Model)
+					{
+						<div class="alerts-content-single">
+
+							<div class="alerts-content-inner">
+								<div class="content-main">
+									<div class="content-title">
+										<span>@user.FullName</span>
+									
+									</div>
+									<div class="content-desc">
+										@user.Username
+									</div>
+								</div>
+							</div>
+
+							<div class="alerts-content-inner">
+								<div class="content-main">
+									<div class="content-desc">
+										@if (user.IsAdmin)
+										{
+											<span>Admin</span>
+										}
+										else
+										{
+											<span>Regular User</span>
+										}
+									</div>
+								</div>
+							</div>
+
+							<div class="alerts-content-inner">
+								<div class="content-main">
+									<div class="content-last">
+
+										<span class="closed btn-all-case">
+											<i class="nt-tick"></i>
+											<span class="alert-text">
+												@(user.IsAdmin ? "Admin" : "User")
+											</span>
+										</span>
+
+										<div class="edit-links">
+											<em class="nt-more"></em>
+											<div class="link-box">
+												<div class="link view-user-btn" data-user-id="@user.Id">
+													<em class="nt-eye"></em>
+													View
+												</div>
+
+												<div class="link edit-user-btn" data-user-id="@user.Id">
+													<em class="nt-edit"></em>
+													Edit
+												</div>
+
+												<div class="link delete-user" data-userid="@user.Id">
+													<em class="nt-bin"></em>
+													Delete
+												</div>
+											</div>
+										</div>
+
+									</div>
+								</div>
+							</div>
+
+						</div>
+					}
+				</div>
+
+
+
+
+			</div>
+
+		</div>
+
+	</section>
+
+	<div class="loading-wrapper">
+		<div class="loading-content">
+		</div>
+		<div class="loading-text position-absolute">
+			Loading...
+		</div>
+	</div>
+
+ 	@* <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+	<script src="~/assets/js/script.js"></script>
+</body>
+
+</html> *@
