@@ -218,6 +218,47 @@ namespace TaskManagement.Data.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("TaskManagement.Model.Dto.UserTask.TaskDto1", b =>
+                {
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedByName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("TaskStatus")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("TaskStatusId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToTable("TaskDto1");
+                });
+
             modelBuilder.Entity("TaskManagement.Entity.Model.RefreshToken", b =>
                 {
                     b.HasOne("TaskManagement.Entity.Model.User", "User")

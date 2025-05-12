@@ -13,7 +13,7 @@ namespace TaskManagement.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize] // All authenticated users can access, but some endpoints are admin-only
+[Authorize] // All authenticated users can access, but some endpoints are admin-only
 public class TasksController : ControllerBase
 {
     private readonly ITaskManager _taskService;
@@ -42,12 +42,6 @@ public class TasksController : ControllerBase
             return NotFound();
         }
 
-        // Non-admin users can only see their own tasks
-        //if (!User.IsInRole("Admin") && task.UserId.ToString() != User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
-        //{
-        //    return Forbid();
-        //}
-
         return Ok(task);
     }
 
@@ -56,7 +50,6 @@ public class TasksController : ControllerBase
     {
         try
         {
-            // This will now work because we've ensured authentication
             var currentUserId = GetCurrentUserId();
 
             var taskDto = await _taskService.CreateTaskAsync(createTaskDto, currentUserId);
@@ -69,6 +62,38 @@ public class TasksController : ControllerBase
         catch (KeyNotFoundException ex)
         {
             return BadRequest(ex.Message);
+        }
+    }
+
+
+    [HttpPost("create-and-assign-to-me")]
+    public async Task<ActionResult<TaskDto>> CreateTaskAndAssignToMe(CreateTaskDto createTaskDto)
+    {
+        try
+        {
+            // Get current user ID from claims
+            var currentUserId = GetCurrentUserId();
+
+            // Automatically assign the task to the current user
+            createTaskDto.UserId = currentUserId;
+
+            // Status will be automatically set to 2 (Assigned) in the service layer
+            var taskDto = await _taskService.CreateTaskAsync(createTaskDto, currentUserId);
+
+            return CreatedAtAction(nameof(GetTask), new { id = taskDto.Id }, taskDto);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            // Log the exception here
+            return StatusCode(500, new { message = "An error occurred while creating the task" });
         }
     }
 
@@ -108,15 +133,9 @@ public class TasksController : ControllerBase
             return BadRequest("ID mismatch");
         }
 
-        // Non-admin users can only update their own tasks
-        //if (!User.IsInRole("Admin"))
-        //{
+
             var task = await _taskService.GetTaskByIdAsync(id);
-            //if (task == null || task.UserId.ToString() != User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
-            //{
-            //    return Forbid();
-            //}
-        //}
+
 
         try
         {
@@ -131,7 +150,6 @@ public class TasksController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    //[Authorize(Roles = "Admin")] // Only admins can delete tasks
     public async Task<IActionResult> DeleteTask(int id)
     {
         try
@@ -152,59 +170,20 @@ public class TasksController : ControllerBase
         return Ok(statuses);
     }
 
-    [HttpGet("user/{userId}")]
-    public async Task<ActionResult<IEnumerable<TaskDto>>> GetTasksByUser(int userId)
+    [HttpGet("user/tasks")]
+    public async Task<ActionResult<IEnumerable<TaskDto>>> GetTasksByUser()
     {
-        // Non-admin users can only see their own tasks
-        //if (!User.IsInRole("Admin") && userId.ToString() != User.FindFirst(ClaimTypes.NameIdentifier)?.Value)
-        //{
-        //    return Forbid();
-        //}
+        var userIdClaim = User.FindFirst("id")?.Value;
+
+        if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId) || userId == 0)
+        {
+            return Forbid();
+        }
 
         var tasks = await _taskService.GetTasksByUserIdAsync(userId);
         return Ok(tasks);
     }
 
-    [HttpPost("{taskId}/assign/{userId}")]
-    //[Authorize(Roles = "Admin")]
-    public async Task<IActionResult> AssignTask(int taskId, int userId)
-    {
-        try
-        {
-            await _taskService.AssignTaskAsync(taskId, userId);
-            return Ok(new { Message = "Task assigned successfully" });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(ex.Message);
-        }
-    }
-
-    [HttpPost("{taskId}/unassign")]
-    //[Authorize(Roles = "Admin")]
-    public async Task<IActionResult> UnassignTask(int taskId)
-    {
-        try
-        {
-            await _taskService.UnassignTaskAsync(taskId);
-            return Ok(new { Message = "Task unassigned successfully" });
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
-    }
-
-    [HttpGet("{taskId}/can-assign")]
-    public async Task<IActionResult> CanAssignTask(int taskId)
-    {
-        var canAssign = await _taskService.CanAssignTaskAsync(taskId);
-        return Ok(new { CanAssign = canAssign });
-    }
 
 
     #region TaskDetails Endpoints
@@ -271,13 +250,7 @@ public class TasksController : ControllerBase
         int detailId,
         UpdateTaskDetailDto taskDetailDto)
     {
-        // Verify IDs match
-        //if (detailId != taskDetailDto.Id)
-        //{
-        //    return BadRequest("ID mismatch");
-        //}
 
-        // Verify task exists and detail belongs to task
         var detail = await _taskDetailService.GetByIdAsync(detailId);
         if (detail == null || detail.TaskId != taskId)
         {
@@ -298,7 +271,6 @@ public class TasksController : ControllerBase
     [HttpDelete("detailsdelete/{detailId}")]
     public async Task<IActionResult> DeleteTaskDetail(int detailId)
     {
-        // Verify task exists and detail belongs to task
         var detail = await _taskDetailService.GetByIdAsync(detailId);
         if (detail == null )
         {
@@ -317,4 +289,44 @@ public class TasksController : ControllerBase
     }
 
     #endregion
+
+
+
+    [HttpGet("FilterApply")]
+    public async Task<ActionResult<IEnumerable<TaskDto>>> GetFilteredTasks([FromQuery] TaskFilterModel filter)
+    {
+        try
+        {
+            var tasks = await _taskService.GetFilteredTasksAsync(filter);
+            return Ok(tasks);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while filtering tasks");
+        }
+    }
+
+
+    [HttpPost("UpdateStatusById")]
+    public async Task<IActionResult> UpdateStatusById([FromQuery] int taskId, [FromQuery] int statusId)
+    {
+        try
+        {
+            var task = await _taskService.GetTaskByIdAsync(taskId);
+            if (task == null)
+            {
+                return NotFound("Task not found");
+            }
+
+            // Update only the status
+            await _taskService.UpdateStatusAsync(taskId, statusId);
+
+            return Ok(new { success = true, newStatus = statusId });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
+
 }

@@ -163,26 +163,24 @@ function loadUserForEdit(userId) {
             hideLoader();
         });
 }
-
 function deleteUser(userId, $button, callbacks = {}) {
-    // Default callbacks
     const defaultCallbacks = {
-        onSuccess: () => console.log('User deleted'),
-        onError: (message) => console.error('Delete error:', message),
+        onSuccess: () => {
+            showToast('success', 'User deleted successfully.');
+            // Optional: Reload after delay
+            setTimeout(() => location.reload(), 2000);
+        },
+        onError: (message) => showToast('error', message || 'Failed to delete user'),
         onConfirm: () => confirm('Are you sure you want to delete this user?')
     };
 
-    // Merge provided callbacks with defaults
     const { onSuccess, onError, onConfirm } = { ...defaultCallbacks, ...callbacks };
 
-    // Confirm deletion
     if (!onConfirm()) return;
 
-    // UI state
     $button.addClass('disabled');
     showLoader();
 
-    // AJAX call
     $.ajax({
         url: '/Admin/DeleteUser',
         type: 'POST',
@@ -194,11 +192,14 @@ function deleteUser(userId, $button, callbacks = {}) {
             if (response.success) {
                 onSuccess();
             } else {
-                onError(response.message || 'Failed to delete user');
+                onError(response.message);
             }
         },
         error: function (xhr) {
-            onError(xhr.statusText || 'Server error');
+            const errorMsg = xhr.status === 401
+                ? 'You are not authorized to delete this user.'
+                : 'An unexpected error occurred.';
+            onError(errorMsg);
         },
         complete: function () {
             $button.removeClass('disabled');
@@ -207,6 +208,32 @@ function deleteUser(userId, $button, callbacks = {}) {
     });
 }
 
+
+
+function showToast(type, message, duration = 15) { // default: 5 seconds
+    toastr.options = {
+        "closeButton": true,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "timeOut": duration,
+        "extendedTimeOut": duration
+    };
+
+    switch (type) {
+        case 'success':
+            toastr.success(message);
+            break;
+        case 'error':
+            toastr.error(message);
+            break;
+        case 'warning':
+            toastr.warning(message);
+            break;
+        case 'info':
+            toastr.info(message);
+            break;
+    }
+}
 
 function handleEditFormSubmit(form) {
     showLoader();
@@ -218,17 +245,26 @@ function handleEditFormSubmit(form) {
         success: function (response) {
             if (response.success) {
                 closeDrawer('#drawerEditUser');
-                // Refresh the user list or show success message
-                location.reload(); // Simple solution
-            } else {
-                // Replace with updated form if there are validation errors
+                showToast('success', response.message || 'User updated successfully.');
+
+                setTimeout(() => {
+                    location.reload();
+                }, 3000); // Wait 3 seconds
+            } else if (typeof response === 'string') {
+                // Replace with validation error form
                 $('#drawerEditUser').html(response);
+            } else if (response.message) {
+                showToast('error', response.message);
             }
         },
-        error: function () {
-            $.validator.unobtrusive.parse("#editUserForm");
+        error: function (xhr) {
+            if (xhr.status === 401) {
+                showToast('error', 'You are not authorized to perform this action.');
+            } else {
+                showToast('error', 'An unexpected error occurred.');
+            }
 
-            alert('Failed to update user');
+            $.validator.unobtrusive.parse("#editUserForm");
         },
         complete: function () {
             hideLoader();
@@ -278,27 +314,6 @@ function bindTaskEvents() {
     });
 }
 
-function deleteTask(taskId) {
-    showLoader();
-
-    $.ajax({
-        url: '/Task/Delete/' + taskId,
-        type: 'DELETE',
-        headers: {
-            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-        },
-        success: function () {
-            loadTasks(); // Refresh the list
-            showToast('Task deleted successfully');
-        },
-        error: function (xhr) {
-            alert('Failed to delete task: ' + xhr.statusText);
-        },
-        complete: function () {
-            hideLoader();
-        }
-    });
-}
 
 
 
@@ -351,26 +366,12 @@ function loadTaskForEdit(taskId) {
 
 
 
+function deleteTask(taskId, $button) {
+    if (!confirm('Are you sure you want to delete this task?')) return;
 
-function deleteTask(taskId, $button, callbacks = {}) {
-    // Default callbacks
-    const defaultCallbacks = {
-        onSuccess: () => console.log('Task Deleted'),
-        onError: (message) => console.error('Delete error:', message),
-        onConfirm: () => confirm('Are you sure you want to delete this task?')
-    };
-
-    // Merge provided callbacks with defaults
-    const { onSuccess, onError, onConfirm } = { ...defaultCallbacks, ...callbacks };
-
-    // Confirm deletion
-    if (!onConfirm()) return;
-
-    // UI state
     $button.addClass('disabled');
     showLoader();
 
-    // AJAX call
     $.ajax({
         url: '/Admin/DeleteTask',
         type: 'POST',
@@ -380,13 +381,15 @@ function deleteTask(taskId, $button, callbacks = {}) {
         },
         success: function (response) {
             if (response.success) {
-                onSuccess();
+                showToast('success', 'Task deleted successfully.');
+                setTimeout(() => location.reload(), 4); // Wait 2.5 seconds
             } else {
-                onError(response.message || 'Failed to delete user');
+                showToast('error', response.message || 'Failed to delete task');
             }
         },
         error: function (xhr) {
-            onError(xhr.statusText || 'Server error');
+            const msg = xhr.status === 401 ? 'Unauthorized action.' : 'Server error';
+            showToast('error', msg);
         },
         complete: function () {
             $button.removeClass('disabled');
@@ -394,6 +397,7 @@ function deleteTask(taskId, $button, callbacks = {}) {
         }
     });
 }
+
 
 
 function loadCommentForm(taskId) {
@@ -411,7 +415,7 @@ function loadCommentForm(taskId) {
             $.validator.unobtrusive.parse($('#addCommentForm'));
         })
         .fail(function () {
-            showToast('error', 'Failed to load comment form');
+            showToast('error', 'Failed to load comment form' , 15);
         })
         .always(function () {
             Common.hideLoader();
@@ -445,7 +449,90 @@ function deleteTaskDetail(detailId) {
     });
 }
 
+function loadUserTaskForEdit(taskId) {
+    showLoader();
 
+    $.get(`/User/GetTaskForEdit?id=${taskId}`)
+        .done(function (data) {
+            if ($('#drawerEditUser').length === 0) {
+                $('body').append(data);
+            } else {
+                $('#drawerEditUser').replaceWith(data);
+            }
+
+            openDrawer('#drawerEditUser');
+
+        })
+        .fail(function () {
+            alert('Failed to load user for editing');
+        })
+        .always(function () {
+            hideLoader();
+        });
+}
+
+function deleteUserTask(taskId, $button, callbacks = {}) {
+    // Default callbacks
+    const defaultCallbacks = {
+        onSuccess: () => console.log('Task Deleted'),
+        onError: (message) => console.error('Delete error:', message),
+        onConfirm: () => confirm('Are you sure you want to delete this task?')
+    };
+
+    // Merge provided callbacks with defaults
+    const { onSuccess, onError, onConfirm } = { ...defaultCallbacks, ...callbacks };
+
+    // Confirm deletion
+    if (!onConfirm()) return;
+
+    // UI state
+    $button.addClass('disabled');
+    showLoader();
+
+    // AJAX call
+    $.ajax({
+        url: '/User/DeleteTask',
+        type: 'POST',
+        data: { id: taskId },
+        headers: {
+            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+        },
+        success: function (response) {
+            if (response.success) {
+                onSuccess();
+            } else {
+                onError(response.message || 'Failed to delete user');
+            }
+        },
+        error: function (xhr) {
+            onError(xhr.statusText || 'Server error');
+        },
+        complete: function () {
+            $button.removeClass('disabled');
+            hideLoader();
+        }
+    });
+}
+
+function loadUpdateStatus(taskId) {
+    showLoader();
+
+    $.get(`/User/TaskStatus?id=${taskId}`) // Changed from UpdateStatus to TaskStatus
+        .done(function (data) {
+            if ($('#drawerEditUser').length === 0) {
+                $('body').append(data);
+            } else {
+                $('#drawerEditUser').replaceWith(data);
+            }
+            openDrawer('#drawerEditUser');
+        })
+        .fail(function () {
+            alert('Failed to load status update form');
+        })
+        .always(function () {
+            hideLoader();
+        });
+}
 
 
 // Document ready and event handlers
@@ -477,8 +564,11 @@ $(document).ready(function () {
         const $deleteButton = $(this);
 
         deleteUser(userId, $deleteButton, {
-            onSuccess: () => location.reload(),
-            onError: (message) => alert(message)
+            onSuccess: () => {
+                showToast('success', 'User deleted successfully.');
+                setTimeout(() => location.reload(), 3000); // delay reload
+            },
+            onError: (message) => showToast('error', message)
         });
     });
 
@@ -496,22 +586,38 @@ $(document).ready(function () {
     })
 
 
-
     $(document).on('click', '.delete-task', function () {
         const taskId = $(this).data('taskid');
-        const $deleteButton = $(this);
-
-        deleteTask(taskId, $deleteButton, {
-            onSuccess: () => location.reload(),
-            onError: (message) => alert(message)
-        });
+        deleteTask(taskId, $(this));
     });
+
 
 
     $(document).on('click', '.add-comment-btn', function (e) {
         e.preventDefault();
         const taskId = $(this).data('task-id');
         loadCommentForm(taskId);
+    });
+
+    $(document).on('click', '.edit-user-task-btn', function () {
+        const taskId = $(this).data('task-id');
+        loadUserTaskForEdit(taskId);
+    })
+
+
+    $(document).on('click', '.delete-user-task', function () {
+        const taskId = $(this).data('taskid');
+        const $deleteButton = $(this);
+
+        deleteUserTask(taskId, $deleteButton, {
+            onSuccess: () => location.reload(),
+            onError: (message) => alert(message)
+        });
+    });
+
+    $(document).on('click', '.update-status-task', function () {
+        const taskId = $(this).data('taskid'); // Changed from task-id to taskid
+        loadUpdateStatus(taskId);
     });
 
 

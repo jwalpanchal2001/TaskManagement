@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TaskManagement.Entity.Model;
+using TaskManagement.Model.Dto;
+using TaskManagement.Model.Dto.UserTask;
 
 namespace TaskManagement.Data.Repository;
 public class TaskRepository : ITaskRepository
@@ -47,6 +51,14 @@ public class TaskRepository : ITaskRepository
         return await _context.Tasks
             .Include(t => t.TaskStatus)
             .Where(t => t.UserId == userId && !t.IsDeleted)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Tasks>> GetTasksCreatedByUserAsync(int userId)
+    {
+        return await _context.Tasks
+            .Include(t => t.TaskStatus)
+            .Where(t => t.CreatedById == userId && !t.IsDeleted)
             .ToListAsync();
     }
 
@@ -129,5 +141,98 @@ public class TaskRepository : ITaskRepository
 
 
 
+    public async Task<List<TaskDto1>> GetFilteredTasksAsync(TaskFilterModel filter)
+    {
+        try
+        {
+     
 
+            // Step 1: Get task IDs from stored procedure
+            var results = await _context.Set<TaskDto1>()
+           .FromSqlRaw("EXEC sp_FilterTasks @IncludeDeleted = {0}, @CreatedById = {1}, @AssignedToId = {2}, @StatusId = {3}, @StartDate = {4}, @EndDate = {5}, @SearchTerm = {6}",
+               filter.IncludeDeleted, filter.CreatedById, filter.AssignedToId, filter.StatusId, filter.StartDate, filter.EndDate, filter.SearchTerm)
+           .ToListAsync();
+
+
+            return results;
+        }
+        catch (Exception ex)
+        {
+            // Log exception
+            throw;
+        }
+    }
+
+
+    public async Task<bool> UpdateTaskStatus(int taskId, int statusId)
+    {
+        var rowsAffected = await _context.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE Tasks SET TaskStatusId = {statusId} WHERE Id = {taskId}");
+
+        return rowsAffected > 0;
+    }
+
+    //public async Task<IEnumerable<Tasks>> GetFilteredTasksAsync(
+    // bool includeDeleted = false,
+    // int? createdById = null,
+    // int? assignedToId = null,
+    // int? statusId = null,
+    // DateTime? startDate = null,
+    // DateTime? endDate = null,
+    // string searchTerm = null)
+    //{
+    //    var query = _context.Tasks
+    //        .Include(t => t.User)
+    //        .Include(t => t.CreatedBy)
+    //        .Include(t => t.TaskStatus)
+    //        .Include(t => t.TaskDetails)
+    //        .AsQueryable();
+
+    //    // Apply filters
+    //    if (!includeDeleted)
+    //    {
+    //        query = query.Where(t => !t.IsDeleted);
+    //    }
+
+    //    if (createdById.HasValue)
+    //    {
+    //        query = query.Where(t => t.CreatedById == createdById.Value);
+    //    }
+
+    //    if (assignedToId.HasValue)
+    //    {
+    //        query = query.Where(t => t.UserId == assignedToId.Value);
+    //    }
+
+    //    if (statusId.HasValue)
+    //    {
+    //        query = query.Where(t => t.TaskStatusId == statusId.Value);
+    //    }
+
+    //    if (startDate.HasValue)
+    //    {
+    //        query = query.Where(t => t.DueDate >= startDate.Value);
+    //    }
+
+    //    if (endDate.HasValue)
+    //    {
+    //        query = query.Where(t => t.DueDate <= endDate.Value);
+    //    }
+
+    //    if (!string.IsNullOrEmpty(searchTerm))
+    //    {
+    //        query = query.Where(t =>
+    //            t.Title.Contains(searchTerm) ||
+    //            t.Description.Contains(searchTerm));
+    //    }
+
+    //    // Ordering
+    //    query = query
+    //        .OrderBy(t => t.DueDate)
+    //        .ThenByDescending(t => t.CreatedAt);
+
+    //    return await query
+    //        .AsNoTracking()
+    //        .ToListAsync();
+    //}
 }

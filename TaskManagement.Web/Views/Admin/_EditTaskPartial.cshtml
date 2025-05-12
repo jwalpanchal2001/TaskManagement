@@ -1,173 +1,165 @@
-﻿	@using TaskManagement.Model.Dto
-	@model TaskManagement.Model.Dto.TaskDto
+﻿@using TaskManagement.Model.Dto
+@model TaskManagement.Model.Dto.TaskDto
 
-	<div id="drawerEditUser" class="drawer">
-		<div class="overlay" style="display: none;"></div>
-		<div class="drawer-inner">
-			<div class="drawer-title">
-				<a title="back" onclick="Common.closeDrawer('#drawerEditUser')">
-					<i class="nt-angle-prev"></i>
-				</a>
-				<h1>Edit User</h1>
-			</div>
+<div id="drawerEditUser" class="drawer">
+    <div class="overlay" style="display: none;"></div>
+    <div class="drawer-inner">
+        <div class="drawer-title">
+            <a title="back" onclick="Common.closeDrawer('#drawerEditUser')">
+                <i class="nt-angle-prev"></i>
+            </a>
+            <h1>Edit Task</h1>
+        </div>
 
-			<form id="createTaskForm" class="drawer-form view-drawer" asp-action="UpdateTask" asp-controller="Admin" method="post">
-				<div id="validationSummary" class="text-danger mb-2"></div>
-				<input type="hidden" asp-for="Id" />
+        <form id="createTaskForm" class="drawer-form view-drawer" asp-action="UpdateTask" asp-controller="Admin" method="post">
+            <div id="validationSummary" class="text-danger mb-2"></div>
+            <input type="hidden" asp-for="Id" />
 
-				<div class="row">
-					<div class="form-title">Task Information</div>
+            <div class="row">
+                <div class="form-title">Task Information</div>
 
-					<div class="col-lg-6 data-detail">
-						<div class="data-label">Title</div>
-						<div class="data-val">
-							<input type="text" asp-for="Title" class="form-control" required maxlength="200" />
-							<span asp-validation-for="Title" class="text-danger"></span>
-						</div>
-					</div>
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Title</div>
+                    <div class="data-val">
+                        <input type="text" asp-for="Title" class="form-control" required maxlength="200" />
+                        <span asp-validation-for="Title" class="text-danger"></span>
+                    </div>
+                </div>
 
-					<div class="col-lg-6 data-detail">
-						<div class="data-label">Assigned To</div>
-						<div class="data-val">
-						<select asp-for="UserId" class="form-control" id="userDropdown">
-							<option value="">-- Unassigned --</option>
-								@foreach (var user in ViewBag.Users ?? new List<UserDto>())
-								{
-									<option value="@user.Id">@user.FullName</option>
-								}
-							</select>
-							<span asp-validation-for="UserId" class="text-danger"></span>
-						</div>
-					</div>
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Assigned To</div>
+                    <div class="data-val">
+                        <select asp-for="UserId" class="form-control" id="userDropdown">
+                            <option value="">-- Unassigned --</option>
+                            @foreach (var user in ViewBag.Users ?? new List<UserDto>())
+                            {
+                                <option value="@user.Id" selected="@(user.Id == Model.UserId)">@user.FullName</option>
+                            }
+                        </select>
+                        <span asp-validation-for="UserId" class="text-danger"></span>
+                    </div>
+                </div>
 
-					<div class="col-lg-6 data-detail">
-						<div class="data-label">Due Date</div>
-						<div class="data-val">
-							<input type="datetime-local" asp-for="DueDate" class="form-control" />
-							<span asp-validation-for="DueDate" class="text-danger"></span>
-						</div>
-					</div>
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Due Date</div>
+                    <div class="data-val">
+                        <input type="datetime-local" asp-for="DueDate" class="form-control" />
+                        <span asp-validation-for="DueDate" class="text-danger"></span>
+                    </div>
+                </div>
 
-					<div class="col-lg-6 data-detail">
-						<div class="data-label">Status</div>
-						<div class="data-val">
-						<select asp-for="TaskStatusId" class="form-control" id="taskStatusDropdown">
-							@foreach (var status in ViewBag.TaskStatuses ?? new List<TaskStatus>())
-								{
-									<option value="@status.Id">@status.Name</option>
-								}
-							</select>
-							<span asp-validation-for="TaskStatusId" class="text-danger"></span>
-						</div>
-					</div>
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Status</div>
+                    <div class="data-val">
+                        <select asp-for="TaskStatusId" class="form-control" id="taskStatusDropdown">
+                            @foreach (var status in ViewBag.TaskStatuses ?? new List<TaskStatus>())
+                            {
+                                <option value="@status.Id" selected="@(status.Id == Model.TaskStatusId)">
+                                    @status.Name
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="TaskStatusId" class="text-danger"></span>
+                    </div>
+                </div>
 
-					<div class="col-lg-12 data-detail">
-						<div class="data-label">Description</div>
-						<div class="data-val">
-							<textarea asp-for="Description" class="form-control" rows="4"></textarea>
-							<span asp-validation-for="Description" class="text-danger"></span>
-						</div>
-					</div>
-				</div>
+                <div class="col-lg-12 data-detail">
+                    <div class="data-label">Description</div>
+                    <div class="data-val">
+                        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
 
-				<div class="invite-botttom">
-					<button type="submit" class="btn-invite">Save</button>
-					<a class="cancel" onclick="Common.closeDrawer('#drawerAddEditProject')">
-						<i class="nt-backward"></i>
-						Cancel
-					</a>
-				</div>
-			</form>
-		</div>
-	</div>
+            <div class="invite-botttom">
+                <button type="submit" class="btn-invite">Save</button>
+                <a class="cancel" onclick="Common.closeDrawer('#drawerEditUser')">
+                    <i class="nt-backward"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
 
+<partial name="_ValidationScriptsPartial" />
 
-		<partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            // Debugging: Verify elements exist
+            console.log('userDropdown exists:', $('#userDropdown').length > 0);
+            console.log('taskStatusDropdown exists:', $('#taskStatusDropdown').length > 0);
 
-		<script>
-			$(document).ready(function () {
+            // Event handler for user dropdown
+            $(document).on('change', '#userDropdown', function() {
+                console.log('User dropdown changed to:', $(this).val());
 
+                if ($(this).val()) {
+                    // User selected - ensure status isn't 1 (Unassigned)
+                    if ($('#taskStatusDropdown').val() == '1') {
+                        $('#taskStatusDropdown').val('2').trigger('change');
+                        console.log('Changed status from 1 to 2 because user was assigned');
+                    }
+                }
+            });
 
-			const unassignedStatusId = 1; // Make sure this matches your DB seed for "Unassigned"
-			// Function to filter status options
-		function updateStatusOptions() {
-			const selectedUser = $('#userDropdown').val();
-			const $statusDropdown = $('#taskStatusDropdown');
+            // Event handler for status dropdown
+            $(document).on('change', '#taskStatusDropdown', function() {
+                console.log('Status dropdown changed to:', $(this).val());
 
-			$statusDropdown.find('option').each(function () {
-				const value = parseInt($(this).val());
+                if ($(this).val() === '1') {
+                    // Status set to Unassigned - clear user selection
+                    $('#userDropdown').val('').trigger('change');
+                    console.log('Cleared user selection because status was set to Unassigned');
+                }
+            });
 
-			if (!selectedUser) {
-				// No user selected — only show "Unassigned"
-				if (value === unassignedStatusId) {
-					$(this).show();
-				} else {
-					$(this).hide();
-				}
+            // Initial validation when form loads
+            function initializeSelections() {
+                if ($('#userDropdown').val()) {
+                    // Has assigned user - status can't be 1
+                    if ($('#taskStatusDropdown').val() == '1') {
+                        $('#taskStatusDropdown').val('2').trigger('change');
+                    }
+                } else if ($('#taskStatusDropdown').val() == '1') {
+                    // Status is Unassigned - ensure no user selected
+                    $('#userDropdown').val()== '-1';
+                }
+            }
 
-				if ($statusDropdown.val() != unassignedStatusId) {
-					$statusDropdown.val(unassignedStatusId); // Set it to Unassigned
-				}
-			} else {
-				// User selected — show all except "Unassigned"
-				if (value === unassignedStatusId) {
-					$(this).hide();
+            initializeSelections();
 
-					if ($statusDropdown.val() == unassignedStatusId) {
-						$statusDropdown.val(''); // Clear selection if it was Unassigned
-					}
-				} else {
-					$(this).show();
-				}
-			}
-		});
-	}
+            // Form submission validation
+        // Form submission handler - modified version
+            $('#createTaskForm').on('submit', function(e) {
+                console.log("form clicked");
 
-			// Function to reset user if "Unassigned" status selected
-			function updateUserSelection() {
-				const selectedStatus = parseInt($('#taskStatusDropdown').val());
-				if (selectedStatus === unassignedStatusId) {
-					$('#userDropdown').val(''); // Clear user
-				}
-				updateStatusOptions(); // Revalidate status dropdown
-			}
+                // First validate the mutual exclusion rule
+                if ($('#userDropdown').val() && $('#taskStatusDropdown').val() == '1') {
+                    e.preventDefault();
+                    alert('Error: Cannot have both a user assigned and status set to Unassigned');
+                    return false;
+                }
 
-			// Attach change events
-			$('#userDropdown').on('change', updateStatusOptions);
-			$('#taskStatusDropdown').on('change', updateUserSelection);
+                if (!$('#userDropdown').val() && $('#taskStatusDropdown').val() != '1') {
+                    e.preventDefault();
+                    alert('Error: When no user is assigned, status must be Unassigned');
+                    return false;
+                }
 
-			// Initial check on page load
-			updateStatusOptions();
+                // If validation passes, proceed with submission
+                console.log('Form submission proceeding...');
 
-			// Form submission logic remains unchanged
-			$('#createTaskForm').on('submit', function (e) {
-				e.preventDefault();
-				Common.showLoader();
+                // You can add AJAX submission here if needed
+                // return false; // Uncomment if using AJAX
+            });
 
-				$.ajax({
-					url: $(this).attr('action'),
-					type: 'POST',
-					data: $(this).serialize(),
-					success: function (response) {
-						if (response.success) {
-							Common.closeDrawer('#drawerAddEditProject');
-							location.reload();
-						} else {
-							$('#validationSummary').html(response.message || 'Failed to create task');
-						}
-					},
-					error: function (xhr) {
-						if (xhr.status === 400) {
-							$('#validationSummary').html(xhr.responseText);
-						} else {
-							$('#validationSummary').html('An error occurred');
-						}
-					},
-					complete: function () {
-						Common.hideLoader();
-					}
-				});
-			});
-		});
-
-		</script>
+            // Alternative click handler for the button if needed
+            $('.btn-invite').on('click', function(e) {
+                console.log("button clicked");
+                // This ensures the form submission is handled properly
+                $('#createTaskForm').submit();
+            });
+        });
+    </script>

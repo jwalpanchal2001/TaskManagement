@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Flurl.Http;
 using Microsoft.AspNetCore.Http;
+using TaskManagement.Entity.Model;
 using TaskManagement.Model.Api;
 using TaskManagement.Model.Dto;
 using TaskManagement.Model.Dto.UserTask;
@@ -37,6 +38,31 @@ public class TaskService : BaseServices, ITaskService
             return new ApiResponseModel(false, ex.Message);
         }
     }
+
+
+
+
+    public async Task<ApiResponseModel> CreateUserTaskAsync(CreateTaskDto createTaskDto)
+    {
+        try
+        {
+            var response = await GetFlurlRequestWithToken("Tasks", "create-and-assign-to-me")
+                .PostJsonAsync(createTaskDto)
+                .ReceiveJson<TaskDto>();
+
+            return new ApiResponseModel(true, "Created Succesfully.", response);
+        }
+        catch (FlurlHttpException ex)
+        {
+            var error = await ex.GetResponseJsonAsync<ApiResponseModel>();
+            return error ?? new ApiResponseModel(false, "Unexpected error.");
+        }
+        catch (Exception ex)
+        {
+            return new ApiResponseModel(false, ex.Message);
+        }
+    }
+
 
     public async Task<List<TaskDto>> GetAllTasksAsync(bool includeDeleted = false)
     {
@@ -196,7 +222,97 @@ public class TaskService : BaseServices, ITaskService
             return false;
         }
     }
+    public async Task<List<TaskDto>> GetTasksForCurrentUserAsync()
+    {
+        try
+        {
+            var request = GetFlurlRequestWithToken("tasks", "user/tasks");
+            var response = await request.GetAsync();
+
+            if (response.StatusCode == (int)HttpStatusCode.NoContent)
+            {
+                return new List<TaskDto>();
+            }
+
+            return await response.GetJsonAsync<List<TaskDto>>();
+        }
+        catch (FlurlHttpException ex)
+        {
+
+            if (ex.StatusCode == (int)HttpStatusCode.Unauthorized ||
+                ex.StatusCode == (int)HttpStatusCode.Forbidden)
+            {
+                HandleTokenExpiry();
+                throw; // Re-throw after handling token expiry
+            }
+
+            return new List<TaskDto>();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            HandleTokenExpiry();
+            throw;
+        }
+    }
 
 
+    public async Task<List<TaskDto>> GetFilteredTasksAsync(
+    bool includeDeleted = false,
+    int? assignedToId = null,
+    int? statusId = null,
+    DateTime? startDate = null,
+    DateTime? endDate = null,
+    string searchTerm = null)
+    {
+        try
+        {
+            // Build query parameters
+            var queryParams = new Dictionary<string, object>
+            {
+                ["includeDeleted"] = includeDeleted
+            };
+
+            if (assignedToId.HasValue)
+                queryParams["assignedToId"] = assignedToId.Value;
+            if (statusId.HasValue)
+                queryParams["statusId"] = statusId.Value;
+            if (startDate.HasValue)
+                queryParams["startDate"] = startDate.Value.ToString("yyyy-MM-dd");
+            if (endDate.HasValue)
+                queryParams["endDate"] = endDate.Value.ToString("yyyy-MM-dd");
+            if (!string.IsNullOrEmpty(searchTerm))
+                queryParams["searchTerm"] = searchTerm;
+
+            var response = await GetFlurlRequestWithToken("Tasks", "FilterApply")
+                .SetQueryParams(queryParams)
+                .GetJsonAsync<List<TaskDto>>();
+
+            return response ?? new List<TaskDto>();
+        }
+        catch (FlurlHttpException ex)
+        {
+            // Log error if needed
+            return new List<TaskDto>();
+        }
+    }
+
+    public async Task<bool> UpdateStatusAsync(int taskId, int statusId)
+    {
+        try
+        {
+            var response = await GetFlurlRequestWithToken("Tasks", "UpdateStatusById")
+                .SetQueryParams(new { taskId = taskId, statusId = statusId })
+                .PostAsync(null); // You can use PostAsync(null) for empty body
+
+            return true;
+        }
+        catch (FlurlHttpException ex)
+        {
+            if (ex.StatusCode == (int)HttpStatusCode.NotFound)
+                throw new KeyNotFoundException("Task not found");
+
+            return false;
+        }
+    }
 
 }

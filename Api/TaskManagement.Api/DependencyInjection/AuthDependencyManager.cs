@@ -25,13 +25,6 @@ public class AuthDependencyManager : Module
         builder.RegisterType<TaskRepository>().As<ITaskRepository>().InstancePerLifetimeScope();
         builder.RegisterType<TaskDetailManager>().As<ITaskDetailManager>().InstancePerLifetimeScope();
         builder.RegisterType<TaskDetailRepository>().As<ITaskDetailRepository>().InstancePerLifetimeScope();
-
-
-
-
-
-
-
     }
 }
 

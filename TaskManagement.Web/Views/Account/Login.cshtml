@@ -11,13 +11,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Anzenn Safety Alerts</title>
     <link rel="stylesheet" href="~/assets/css/common.css">
+
+    <style>
+        .alert {
+            padding: 0.75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: 0.25rem;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-dismissible {
+            padding-right: 4rem;
+        }
+
+        .btn-close {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 0.75rem 1.25rem;
+            color: inherit;
+        }
+    </style>
 </head>
 <body class="login-bg">
     <section class="main-dev-for-all elementes-center position-relative">
         <div class="containerc">
             <div class="common-box box-style margin-auto position-relative after-po w-100">
                 <div class="uper-bx">
-
+                    <!-- Add this error message div -->
+                    @if (ViewBag.ErrorMessage != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="nt-lock"></i> @ViewBag.ErrorMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
                     <form asp-action="Login" asp-controller="Account" id="frmLogin" method="post" class="form" autocomplete="off">
                         @Html.AntiForgeryToken()
 
@@ -30,36 +64,6 @@
                                 </div>
                             </div>
 
-                          @*   <div class="form-floating position-relative">
-                                <input id="txtEmail"
-                                       translate="no"
-                                       class="form-control"
-                                       placeholder
-                                       tabindex="1"
-                                       autofocus=""
-                                       type="text"
-                                       name="Email"
-                                       value="">
-                                <label class="form-label position-absolute"
-                                       data-name="required"
-                                       for="txtEmail">
-                                    Email
-                                </label>
-                            </div>
-
-                            <div class="form-floating position-relative">
-                                <input id="txtPassword"
-                                       translate="no"
-                                       type="password"
-                                       placeholder
-                                       class="form-control"
-                                       tabindex="2"
-                                       name="Password">
-                                <label class="form-label position-absolute"
-                                       for="txtPassword">
-                                    Password
-                                </label>
-                            </div> *@
 
                             <div class="form-floating position-relative">
                                 <input asp-for="Email" class="form-control" id="txtEmail" placeholder="Email" />
@@ -137,11 +141,25 @@
                             if (response.success) {
                                 window.location.href = response.redirectUrl || '/dashboard';
                             } else {
-                                alert(response.message || "Invalid login.");
+                                // Show error message above form
+                                $('#divLoginForm').prepend(
+                                    `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                        <i class="nt-lock"></i> ${response.message || "Invalid login"}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                    </div>`
+                                );
                             }
                         },
                         error: function (err) {
-                            alert("Something went wrong.");
+                            $('#divLoginForm').prepend(
+                                `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="nt-lock"></i> Something went wrong. Please try again.
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>`
+                            );
+                        },
+                        complete: function() {
+                            hideLoader();
                         }
                     });
                 }

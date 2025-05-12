@@ -21,6 +21,9 @@ public interface ITaskManager
     Task AssignTaskAsync(int taskId, int userId);
     Task UnassignTaskAsync(int taskId);
     Task<bool> TaskExistsAsync(int taskId);
+    Task<List<TaskDto>> GetFilteredTasksAsync(TaskFilterModel filter);
+    Task<bool> UpdateStatusAsync(int taskId, int statusId);
+
 
 
 }

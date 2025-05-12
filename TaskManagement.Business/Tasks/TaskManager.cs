@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Mapster;
 using MapsterMapper;
+using Microsoft.EntityFrameworkCore;
 using TaskManagement.Data.Repository;
 using TaskManagement.Entity.Model;
 using TaskManagement.Model.Dto;
@@ -63,8 +64,14 @@ public class TaskManager : ITaskManager
             throw new KeyNotFoundException("Assigned user not found");
         if (taskDto.UserId.HasValue)
         {
-            taskDto.TaskStatusId = 2;
+
+            if (taskDto.TaskStatusId == 1)
+            {
+                taskDto.TaskStatusId = 2;
+
+            }
         }
+
 
         var task = taskDto.Adapt<TaskManagement.Entity.Model.Tasks>();
         task.CreatedAt = DateTime.UtcNow;
@@ -146,4 +153,19 @@ public class TaskManager : ITaskManager
     {
         return await _taskRepository.TaskExistsAsync(taskId);
     }
+
+
+    public async Task<List<TaskDto>> GetFilteredTasksAsync(TaskFilterModel filter)
+    {
+        var tasks = await _taskRepository.GetFilteredTasksAsync(filter);
+        return tasks.Adapt<List<TaskDto>>();
+    }
+
+    public async Task<bool> UpdateStatusAsync(int taskId, int statusId)
+    {
+        var task = await _taskRepository.UpdateTaskStatus(taskId, statusId);
+        return task;
+    }
+
+
 }

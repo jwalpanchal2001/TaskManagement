@@ -20,4 +20,21 @@ public interface ITaskService
     Task<TaskDetails> AddTaskDetailAsync(CreateTaskDetailDto details);
     Task<bool> DeleteDetailAsync(int id);
 
+    Task<List<TaskDto>> GetTasksForCurrentUserAsync();
+
+    Task<ApiResponseModel> CreateUserTaskAsync(CreateTaskDto createTaskDto);
+
+    Task<List<TaskDto>> GetFilteredTasksAsync(
+    bool includeDeleted = false,
+    int? assignedToId = null,
+    int? statusId = null,
+    DateTime? startDate = null,
+    DateTime? endDate = null,
+    string searchTerm = null);
+
+    Task<bool> UpdateStatusAsync(int taskId, int statusId);
+
+
+    //IEnumerable<Task> SortTasks(IEnumerable<Task> tasks, string sortBy, string sortOrder);
+
 }

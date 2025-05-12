@@ -8,7 +8,7 @@ namespace TaskManagement.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-//[Authorize] 
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly IUserManager _userManager;
@@ -21,8 +21,21 @@ public class UsersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers(bool includeDeleted = false)
     {
-        var users = await _userManager.GetAllUsersAsync(includeDeleted);
-        return Ok(users);
+        try
+        {
+            var users = await _userManager.GetAllUsersAsync(includeDeleted);
+            return Ok(users);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Token is invalid or expired
+            return Unauthorized(new { success = false, message = "Unauthorized access. Token may be expired or invalid." });
+        }
+        catch (Exception ex)
+        {
+            // Other unhandled exceptions
+            return StatusCode(500, new { success = false, message = "An error occurred while fetching users.", error = ex.Message });
+        }
     }
 
     [HttpGet("{id}")]
@@ -91,4 +104,12 @@ public class UsersController : ControllerBase
             return NotFound(ex.Message);
         }
     }
+
+
+
+
+
+
+
+
 }

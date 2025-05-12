@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
 using TaskManagement.Entity.Model;
+using TaskManagement.Model.Dto.UserTask;
 
 public class ApplicationDbContext : DbContext
 {
@@ -16,6 +17,7 @@ public class ApplicationDbContext : DbContext
 
 
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -25,6 +27,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Tasks>().HasQueryFilter(t => !t.IsDeleted);
         modelBuilder.Entity<TaskDetail>().HasQueryFilter(td => !td.IsDeleted);
         modelBuilder.Entity<TaskState>().HasQueryFilter(ts => !ts.IsDeleted);
+        modelBuilder.Entity<TaskDto1>().HasNoKey();
         //modelBuilder.Entity<UserTask>().HasQueryFilter(ut => !ut.IsDeleted);
 
         // Relationships

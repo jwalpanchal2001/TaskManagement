@@ -1,0 +1,81 @@
+﻿@model TaskManagement.Model.Dto.TaskDto
+
+<div id="drawerEditUser" class="drawer">
+    <div class="overlay" style="display: none;"></div>
+    <div class="drawer-inner view-drawer">
+        <div class="drawer-title">
+            <a title="back" onclick="Common.closeDrawer('#drawerEditUser')">
+                <i class="nt-angle-prev"></i>
+            </a>
+            <h1>Update Task Status</h1>
+        </div>
+
+        <form id="statusUpdateForm" asp-action="UpdateStatus" asp-controller="User" method="post" class="drawer-form">
+            <input type="hidden" asp-for="Id" />
+            <div id="validationSummary" class="text-danger mb-2"></div>
+
+            <div class="row">
+                <div class="form-title">Status Information</div>
+
+                <div class="col-lg-6 data-detail">
+                    <div class="data-label">Status</div>
+                    <div class="data-val">
+                        <select asp-for="TaskStatusId" class="form-control">
+                            @foreach (var status in ViewBag.TaskStatuses ?? new List<TaskStatus>())
+                            {
+                                @if (status.Id != 1)
+                                {
+                                    <option value="@status.Id" selected="@(status.Id == Model.TaskStatusId)">
+                                        @status.Name
+                                    </option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="TaskStatusId" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="invite-botttom">
+                <button type="submit" class="btn-invite">Save</button>
+                <a class="cancel" onclick="Common.closeDrawer('#drawerEditUser')">
+                    <i class="nt-backward"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+        $('#statusUpdateForm').on('submit', function(e) {
+            e.preventDefault();
+            Common.showLoader();
+
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        Common.closeDrawer('#drawerEditUser');
+                        // Update the status display on the page
+                        $('[data-taskid="@Model.Id"] .task-status').text($('#TaskStatusId option:selected').text());
+                        location.reload();
+                    } else {
+                        $('#validationSummary').html(response.message || 'Failed to update status');
+                    }
+                },
+                error: function(xhr) {
+                    if (xhr.status === 400) {
+                        $('#validationSummary').html(xhr.responseText);
+                    } else {
+                        $('#validationSummary').html('An error occurred');
+                    }
+                },
+                complete: function() {
+                    Common.hideLoader();
+                }
+            });
+        });
+</script>

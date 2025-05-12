@@ -15,50 +15,31 @@ public class TokenRefreshMiddleware
         _next = next;
     }
 
-    //public async Task InvokeAsync(HttpContext context)
-    //{
-    //    var accessToken = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-
-    //    if (!string.IsNullOrEmpty(accessToken) && IsTokenExpired(accessToken))
-    //    {
-    //        // Get refresh token from cookie or header (choose your method)
-    //        var refreshToken = context.Request.Cookies["refreshToken"];
-    //        if (string.IsNullOrEmpty(refreshToken))
-    //        {
-    //            // You can also fetch from headers if you're not using cookies
-    //            refreshToken = context.Request.Headers["X-Refresh-Token"];
-    //        }
-
-    //        if (!string.IsNullOrEmpty(refreshToken))
-    //        {
-    //            var newAccessToken = await GetNewAccessTokenAsync(refreshToken, context);
-
-    //            if (!string.IsNullOrEmpty(newAccessToken))
-    //            {
-    //                // Replace the old access token in the request header
-    //                context.Request.Headers["Authorization"] = "Bearer " + newAccessToken;
-    //            }
-    //        }
-    //    }
-
-    //    await _next(context); // Proceed to the next middleware
-    //}
-
     public async Task InvokeAsync(HttpContext context)
     {
         var accessToken = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
 
-        if (!string.IsNullOrEmpty(accessToken) && IsTokenExpired(accessToken))
+        if (!string.IsNullOrEmpty(accessToken))
         {
-            var userId = GetUserIdFromToken(accessToken);
+            var isExpired = IsTokenExpired(accessToken);
 
-            if (!string.IsNullOrEmpty(userId))
+            // Prevent multiple refreshes in the same request pipeline
+            if (isExpired && !context.Items.ContainsKey("TokenRefreshed"))
             {
-                var newAccessToken = await GetNewAccessTokenAsync(userId, context);
+                var userId = GetUserIdFromToken(accessToken);
 
-                if (!string.IsNullOrEmpty(newAccessToken))
+                if (!string.IsNullOrEmpty(userId))
                 {
-                    context.Request.Headers["Authorization"] = "Bearer " + newAccessToken;
+                    var newAccessToken = await GetNewAccessTokenAsync(userId, context);
+
+                    if (!string.IsNullOrEmpty(newAccessToken))
+                    {
+                        // Replace the expired token with the new one
+                        context.Request.Headers["Authorization"] = "Bearer " + newAccessToken;
+
+                        // Store in context to prevent re-refreshing during this request
+                        context.Items["TokenRefreshed"] = true;
+                    }
                 }
             }
         }
@@ -70,16 +51,13 @@ public class TokenRefreshMiddleware
     {
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(token);
-
-        var userIdClaim = jwt.Claims.FirstOrDefault(c => c.Type == "id");
-        return userIdClaim?.Value;
+        return jwt.Claims.FirstOrDefault(c => c.Type == "id")?.Value;
     }
 
     private bool IsTokenExpired(string token)
     {
         var handler = new JwtSecurityTokenHandler();
         var jwt = handler.ReadJwtToken(token);
-
         return jwt.ValidTo < DateTime.UtcNow;
     }
 
@@ -88,7 +66,7 @@ public class TokenRefreshMiddleware
         using var client = new HttpClient();
         client.BaseAddress = new Uri($"{context.Request.Scheme}://{context.Request.Host}");
 
-        var requestObj = new { userId = userId };
+        var requestObj = new { userId };
         var content = new StringContent(JsonSerializer.Serialize(requestObj), Encoding.UTF8, "application/json");
 
         try
@@ -100,14 +78,14 @@ public class TokenRefreshMiddleware
                 using var doc = JsonDocument.Parse(responseString);
                 var newToken = doc.RootElement.GetProperty("accessToken").GetString();
 
-                var newRefresh = doc.RootElement.TryGetProperty("refreshToken", out var newRefreshToken)
-                    ? newRefreshToken.GetString()
-                    : null;
-
-                if (!string.IsNullOrEmpty(newRefresh))
+                if (doc.RootElement.TryGetProperty("refreshToken", out var newRefreshToken))
                 {
-                    context.Response.Cookies.Append("refreshToken", newRefresh,
-                        new CookieOptions { HttpOnly = true, Secure = true, SameSite = SameSiteMode.Strict });
+                    context.Response.Cookies.Append("refreshToken", newRefreshToken.GetString(), new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict
+                    });
                 }
 
                 return newToken;
@@ -115,50 +93,9 @@ public class TokenRefreshMiddleware
         }
         catch
         {
-            // Handle error
+            // Optional: log or handle failure
         }
 
         return null;
     }
-
-    //private async Task<string?> GetNewAccessTokenAsync(string refreshToken, HttpContext context)
-    //{
-    //    using var client = new HttpClient();
-
-    //    // Use base address from the current request
-    //    client.BaseAddress = new Uri($"{context.Request.Scheme}://{context.Request.Host}");
-
-    //    var requestObj = new { refreshToken = refreshToken };
-    //    var content = new StringContent(JsonSerializer.Serialize(requestObj), Encoding.UTF8, "application/json");
-
-    //    try
-    //    {
-    //        var response = await client.PostAsync("/api/login/refresh", content);
-    //        if (response.IsSuccessStatusCode)
-    //        {
-    //            var responseString = await response.Content.ReadAsStringAsync();
-    //            using var doc = JsonDocument.Parse(responseString);
-    //            var newToken = doc.RootElement.GetProperty("accessToken").GetString();
-
-    //            // Optionally update refresh token cookie if you return a new one
-    //            var newRefresh = doc.RootElement.TryGetProperty("refreshToken", out var newRefreshToken)
-    //                ? newRefreshToken.GetString()
-    //                : null;
-
-    //            if (!string.IsNullOrEmpty(newRefresh))
-    //            {
-    //                context.Response.Cookies.Append("refreshToken", newRefresh,
-    //                    new CookieOptions { HttpOnly = true, Secure = true, SameSite = SameSiteMode.Strict });
-    //            }
-
-    //            return newToken;
-    //        }
-    //    }
-    //    catch
-    //    {
-    //        return "Error here";
-    //    }
-
-    //    return null;
-    //}
 }

@@ -36,7 +36,9 @@ public class LoginController : Controller
             var result = new
             {
                 accessToken = authResponse.AccessToken,
-                refreshToken = authResponse.RefreshToken
+                refreshToken = authResponse.RefreshToken,
+                isAdmin = authResponse.isAdmin,
+
             };
 
             return Ok(new ApiResponseModel
@@ -80,34 +82,7 @@ public class LoginController : Controller
     }
 
 
-    //[AllowAnonymous]
-    //[HttpPost("refresh")]
-    //public async Task<IActionResult> Refresh([FromBody] RefreshRequestModel request)
-    //{
-    //    try
-    //    {
-    //        var tokens = await _authManager.RefreshTokensAsync(request.RefreshToken);
-
-    //        // Set the new access token in HttpOnly cookie
-    //        Response.Cookies.Append("accessToken", tokens.AccessToken, new CookieOptions
-    //        {
-    //            HttpOnly = true,
-    //            Secure = true, // Use only with HTTPS
-    //            SameSite = SameSiteMode.Strict,
-    //            Expires = DateTime.UtcNow.AddMinutes(30) // Set expiration time for access token
-    //        });
-
-    //        return Ok(new
-    //        {
-    //            refreshToken = tokens.RefreshToken // Or just return this if access token is in the cookie
-    //        });
-    //    }
-    //    catch (SecurityTokenException)
-    //    {
-    //        return Unauthorized("Invalid or expired refresh token.");
-    //    }
-    //}
-
+    [AllowAnonymous]
     [HttpPost("refresh")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {

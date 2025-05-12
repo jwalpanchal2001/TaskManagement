@@ -33,6 +33,8 @@
 
 			<div class="alerts-main">
 
+			
+
 				<div class="view-switcher">
 					<div class="row">
 					<a href="@Url.Action("Index", "Admin")"
@@ -50,7 +52,21 @@
 						<!-- Your existing title content -->
 					</div>
 				</div>
+			@if (TempData["SuccessMessage"] != null)
+			{
+				<div class="alert alert-success alert-dismissible fade show" role="alert">
+					@TempData["SuccessMessage"]
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+			}
 
+			@if (TempData["ErrorMsg"] != null)
+			{
+				<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					@TempData["ErrorMsg"]
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+			}
 
 				<div class="alerts-title">
 
@@ -61,130 +77,6 @@
 					<div class="alerts-icon">
 
 						<ul>
-
-							<li>
-								<div class="icon">
-
-									<i class="nt-filter" title="Filter"
-									   onclick="Common.showFilter(this, '#divFilters')">
-									</i>
-
-									<div id="divFilters" class="filter-sorting">
-
-										<div class="filter-sorting-title">
-											<p>
-												Filters
-											</p>
-											<a title="close" class="close" onclick="Common.hideFilter('#divFilters')">
-												<span class="nt-close-o"></span>
-											</a>
-										</div>
-
-										<form class="mt-3">
-
-											<div class="row">
-
-												<div class="col-lg-12 form-floating">
-													<input id="txtFilterProjectName" type="text" class="form-control"
-														   placeholder="" value="">
-													<label for="txtFilterProjectName">
-														Project Name
-													</label>
-												</div>
-
-												<div class="col-lg-12 form-floating">
-													<input id="txtFilterProjectCode" type="text" class="form-control"
-														   placeholder="" value="">
-													<label for="txtFilterProjectCode">
-														Project Code
-													</label>
-												</div>
-
-											</div>
-
-										</form>
-
-										<div class="apply-botttom">
-
-											<a class="cancel">
-												<span class="nt-refresh"></span>
-												Reset
-											</a>
-
-											<a class="btn-apply">
-												Apply Filter
-											</a>
-
-										</div>
-
-									</div>
-
-								</div>
-
-							</li>
-
-							<li>
-								<div class="icon">
-
-									<i class="nt-sort" title="Sort" onclick="Common.showFilter(this, '#divSorting')">
-									</i>
-
-									<div id="divSorting" class="filter-sorting">
-
-										<div class="filter-sorting-title">
-											<p>
-												Sort by
-											</p>
-											<a title="close" class="close" onclick="Common.hideFilter('#divSorting')">
-												<span class="nt-close-o"></span>
-											</a>
-										</div>
-
-										<div class="form-tabs">
-
-											<ul class="ass-des">
-												<li class="active">
-													Ascending
-												</li>
-												<li>
-													Desending
-												</li>
-											</ul>
-
-											<div class="form-check mb-3">
-												<input id="rbProjectName" class="form-check-input" type="radio"
-													   name="sortListing">
-												<label class="form-check-label" for="rbProjectName">
-													Project Name
-												</label>
-											</div>
-
-											<div class="form-check mb-5">
-												<input id="rbProjectCode" class="form-check-input" type="radio"
-													   name="sortListing">
-												<label class="form-check-label" for="rbProjectCode">
-													Project Code
-												</label>
-											</div>
-
-										</div>
-
-
-										<div class="apply-botttom">
-											<a class="cancel">
-												<span class="nt-refresh"></span>
-												Reset
-											</a>
-											<a title="invite" class="btn-apply">
-												Apply Sort
-											</a>
-										</div>
-
-									</div>
-									</a>
-									</div>
-
-							</li>
 
 							<li class="invite">
 								<a title="invite" class="btn-invite"
@@ -201,6 +93,21 @@
 
 
 				<div class="alerts-content">
+
+					@if (!Model.Any())
+					{
+						<div class="alerts-content-single">
+							<div class="alerts-content-inner">
+								<div class="content-main">
+									<div class="content-title">
+										<span>No users found.</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					}
+					else
+					{
 					@foreach (var user in Model)
 					{
 						<div class="alerts-content-single">
@@ -269,6 +176,9 @@
 
 						</div>
 					}
+					
+				
+				}
 				</div>
 
 
@@ -287,6 +197,26 @@
 			Loading...
 		</div>
 	</div>
+
+@section Scripts {
+	<script>
+		// Wait for the DOM to load
+		document.addEventListener("DOMContentLoaded", function () {
+			const alerts = document.querySelectorAll('.alert');
+			if (alerts.length > 0) {
+				setTimeout(() => {
+					alerts.forEach(alert => {
+						alert.classList.remove('show');
+						alert.classList.add('fade');
+						// Optional: fully remove from DOM after fade
+						setTimeout(() => alert.remove(), 500);
+					});
+				}, 2500); // Delay in milliseconds (2.5 seconds)
+			}
+		});
+	</script>
+}
+
 
  	@* <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 	<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>

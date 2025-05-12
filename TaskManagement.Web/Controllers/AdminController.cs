@@ -7,7 +7,6 @@ using TaskManagement.Model.Dto.UserTask;
 using TaskManagement.Service.Admin;
 
 namespace TaskManagement.Web.Controllers;
-//[Authorize]
 public class AdminController : Controller
 {
     private readonly IUserService _userService;
@@ -18,35 +17,63 @@ public class AdminController : Controller
         _userService = userService;
         _taskService = taskService;
     }
+    [Authorize(Roles = "Admin")]
 
+    #region User
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var users = await _userService.GetAllUsersAsync(); 
-        return View(users);
+        try
+        {
+            var users = await _userService.GetAllUsersAsync();
+            return View(users);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToAction("Login", "Account");
+        }
     }
 
-
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> Create(CreateUserDto createUserDto)
     {
         if (!ModelState.IsValid)
         {
-            return PartialView("_CreateUserPartial", createUserDto); // or whatever your partial view is
+            // Return the partial view with validation messages
+            return PartialView("_CreateUserPartial", createUserDto);
         }
 
-        var result = await _userService.CreateUserAsync(createUserDto);
-
-        if (result.IsSuccess)
+        try
         {
-            TempData["SuccessMessage"] = "User created successfully.";
-            return RedirectToAction("Index"); // or wherever you want to go next
-        }
+            var result = await _userService.CreateUserAsync(createUserDto);
 
-        ModelState.AddModelError("", result.Message ?? "Failed to create user.");
-        return View(createUserDto);
+            if (result.IsSuccess)
+            {
+                TempData["SuccessMessage"] = "User created successfully.";
+                return RedirectToAction("Index");
+            }
+
+            // Add error to model state and return form with existing data
+            ModelState.AddModelError(string.Empty, result.Message ?? "Failed to create user.");
+            TempData["ErrorMsg"] = result.Message;
+            return RedirectToAction("Index");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            TempData["ErrorMessage"] = "You are not authorized to perform this action.";
+            return RedirectToAction("Login", "Account");
+        }
+        catch (Exception ex)
+        {
+            // Log exception (optional)
+            ModelState.AddModelError(string.Empty, "An unexpected error occurred. Please try again later.");
+            return PartialView("_CreateUserPartial", createUserDto);
+        }
     }
 
+
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<IActionResult> GetUserDetails(int id)
     {
@@ -64,6 +91,13 @@ public class AdminController : Controller
 
             return PartialView("_ViewUserPartial", user);
         }
+        catch (UnauthorizedAccessException)
+        {
+            return PartialView("_ViewUserPartial", new UserDto
+            {
+                FullName = "Unauthorized access. Please log in."
+            });
+        }
         catch (Exception ex)
         {
             return PartialView("_ViewUserPartial", new UserDto
@@ -73,38 +107,47 @@ public class AdminController : Controller
         }
     }
 
-
-
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<IActionResult> GetUserForEdit(int id)
     {
-        var user = await _userService.GetUserByIdAsync(id);
-
-        if (user == null)
+        try
         {
-            return NotFound("User not found");
-        }
+            var user = await _userService.GetUserByIdAsync(id);
 
-        return PartialView("_EditUserPartial", user);
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            return PartialView("_EditUserPartial", user);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToAction("Login", "Account");
+        }
     }
 
-
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> UpdateUser(UpdateUserDto model)
     {
-     
         try
         {
-            // Update user in database
             var result = await _userService.UpdateUserAsync(model);
 
             if (result)
             {
-                return Json(new { success = true });
+                return Json(new { success = true, message = "User updated successfully." });
             }
 
+            // Return validation errors as partial view
             ModelState.AddModelError("", "Failed to update user");
             return PartialView("_EditUserPartial", model);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(401, new { success = false, message = "Unauthorized" });
         }
         catch (Exception ex)
         {
@@ -113,6 +156,7 @@ public class AdminController : Controller
         }
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteUser(int id)
@@ -128,61 +172,122 @@ public class AdminController : Controller
 
             return Json(new { success = false, message = "Failed to delete user" });
         }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(401, new { success = false, message = "Unauthorized" });
+        }
         catch (Exception ex)
         {
             return Json(new { success = false, message = ex.Message });
         }
     }
 
-
+    #endregion
 
     #region Task 
 
+    [Authorize(Roles = "Admin")]
     [HttpGet]
-    public async Task<IActionResult> TaskIndex()
+    public async Task<IActionResult> TaskIndex(
+      [FromQuery] int? assignedToId = null,
+      [FromQuery] int? statusId = null,
+      [FromQuery] DateTime? startDate = null,
+      [FromQuery] DateTime? endDate = null,
+      [FromQuery] string searchTerm = null,
+      [FromQuery] string sortBy = "DueDate",
+      [FromQuery] string sortOrder = "desc")
     {
         try
         {
-            ViewBag.Users = _userService.GetAllUsersAsync().Result;
-            var tasks = await _taskService.GetAllTasksAsync();
-                return View(tasks);
+            ViewBag.Users = await _userService.GetAllUsersAsync();
+            ViewBag.TaskStatuses = await _taskService.GetTaskStatus();
+
+            var tasks = await _taskService.GetFilteredTasksAsync(
+                includeDeleted: false,
+                assignedToId: assignedToId,
+                statusId: statusId,
+                startDate: startDate,
+                endDate: endDate,
+                searchTerm: searchTerm);
+
+            var sortedTasks = SortTaskDtos(tasks, sortBy, sortOrder);
+            return View(sortedTasks);
         }
-        catch (Exception ex)
+        catch (UnauthorizedAccessException)
         {
-            // Log error
+            return RedirectToAction("Login", "Account");
+        }
+        catch (Exception)
+        {
             return StatusCode(500, "Error loading tasks");
         }
     }
 
+    private IEnumerable<TaskDto> SortTaskDtos(IEnumerable<TaskDto> tasks, string sortBy, string sortOrder)
+    {
+        switch (sortBy.ToLower())
+        {
+            case "title":
+                return sortOrder.ToLower() == "desc"
+                    ? tasks.OrderByDescending(t => t.Title)
+                    : tasks.OrderBy(t => t.Title);
+
+            case "duedate":
+                return sortOrder.ToLower() == "desc"
+                    ? tasks.OrderByDescending(t => t.DueDate)
+                    : tasks.OrderBy(t => t.DueDate);
+
+            case "createdat":
+                return sortOrder.ToLower() == "desc"
+                    ? tasks.OrderByDescending(t => t.CreatedAt)
+                    : tasks.OrderBy(t => t.CreatedAt);
+
+            case "status":
+                return sortOrder.ToLower() == "desc"
+                    ? tasks.OrderByDescending(t => t.TaskStatus)
+                    : tasks.OrderBy(t => t.TaskStatus);
+
+            default:
+                return sortOrder.ToLower() == "desc"
+                    ? tasks.OrderByDescending(t => t.DueDate)
+                    : tasks.OrderBy(t => t.DueDate);
+        }
+    }
+
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> CreateTask(CreateTaskDto model)
     {
-        if (!ModelState.IsValid)
+        try
         {
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Users = await _userService.GetAllUsersAsync();
+                return PartialView("_CreateTaskPartial", model);
+            }
+
+            var result = await _taskService.CreateTaskAsync(model);
+            if (result.IsSuccess)
+            {
+                TempData["SuccessMessage"] = "Task created successfully."; 
+                return RedirectToAction("TaskIndex");
+            }
+
+            ModelState.AddModelError("", result.Message);
             ViewBag.Users = await _userService.GetAllUsersAsync();
-            //ViewBag.TaskStatuses = await _taskService.GetTaskStatusesAsync();
             return PartialView("_CreateTaskPartial", model);
         }
-
-        var result = await _taskService.CreateTaskAsync(model);
-        if (result.IsSuccess)
+        catch (UnauthorizedAccessException)
         {
-            return RedirectToAction("TaskIndex");
+            return RedirectToAction("Login", "Account");
         }
-
-        ModelState.AddModelError("", result.Message);
-        ViewBag.Users = await _userService.GetAllUsersAsync();
-        //ViewBag.TaskStatuses = await _taskService.GetTaskStatusesAsync();
-        return PartialView("_CreateTaskPartial", model);
     }
-
 
     [HttpGet]
     public async Task<IActionResult> GetTaskDetails(int id)
     {
         try
         {
-
             var task = await _taskService.GetTaskByIdAsync(id);
             if (task == null)
             {
@@ -190,46 +295,62 @@ public class AdminController : Controller
             }
             return PartialView("_ViewTaskPartial", task);
         }
-        catch (Exception ex)
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(401, "Unauthorized");
+        }
+        catch (Exception)
         {
             return StatusCode(500, "Error loading task details");
         }
     }
 
-
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<IActionResult> GetTaskForEdit(int id)
     {
-        var task = await _taskService.GetTaskByIdAsync(id);
-
-        ViewBag.Users = await _userService.GetAllUsersAsync();
-        ViewBag.TaskStatuses = await _taskService.GetTaskStatus();
-        
-        if (task == null)
+        try
         {
-            return NotFound("User not found");
-        }
+            var task = await _taskService.GetTaskByIdAsync(id);
+            ViewBag.Users = await _userService.GetAllUsersAsync();
+            ViewBag.TaskStatuses = await _taskService.GetTaskStatus();
 
-        return PartialView("_EditTaskPartial", task);
+            if (task == null)
+            {
+                return NotFound("User not found");
+            }
+
+            return PartialView("_EditTaskPartial", task);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return RedirectToAction("Login", "Account");
+        }
     }
 
-
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> UpdateTask(UpdateTaskDto model)
     {
-
         try
         {
-            // Update user in database
             var result = await _taskService.UpdateTaskAsync(model);
 
             if (result)
             {
+                TempData["SuccessMessage"] = "Task Updated successfully.";
+
                 return Redirect("TaskIndex");
             }
 
+         
+
             ModelState.AddModelError("", "Failed to update user");
             return PartialView("_EditTaskPartial", model);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(401, new { success = false, message = "Unauthorized" });
         }
         catch (Exception ex)
         {
@@ -238,6 +359,7 @@ public class AdminController : Controller
         }
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteTask(int id)
@@ -253,6 +375,10 @@ public class AdminController : Controller
 
             return Json(new { success = false, message = "Failed to delete task" });
         }
+        catch (UnauthorizedAccessException)
+        {
+            return Json(new { success = false, message = "Unauthorized" });
+        }
         catch (Exception ex)
         {
             return Json(new { success = false, message = ex.Message });
@@ -260,11 +386,6 @@ public class AdminController : Controller
     }
 
     #endregion
-
-
-
-
-
 
     [HttpGet]
     public IActionResult AddComment(int taskId)
@@ -291,6 +412,14 @@ public class AdminController : Controller
                 message = "Comment added successfully"
             });
         }
+        catch (UnauthorizedAccessException)
+        {
+            return Json(new
+            {
+                success = false,
+                message = "Unauthorized access. Please log in again."
+            });
+        }
         catch (Exception ex)
         {
             return Json(new
@@ -300,6 +429,7 @@ public class AdminController : Controller
             });
         }
     }
+
     [HttpPost]
     public async Task<IActionResult> DeleteDetail(int detailId)
     {
@@ -308,15 +438,18 @@ public class AdminController : Controller
             await _taskService.DeleteDetailAsync(detailId);
             return NoContent();
         }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(401, "Unauthorized access. Please log in again.");
+        }
         catch (KeyNotFoundException ex)
         {
             return NotFound(ex.Message);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return StatusCode(500, "An error occurred while deleting the task detail");
         }
     }
-
 
 }

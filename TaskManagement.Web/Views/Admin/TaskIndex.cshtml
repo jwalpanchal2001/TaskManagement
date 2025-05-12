@@ -1,4 +1,5 @@
-﻿@model List<TaskManagement.Model.Dto.TaskDto>
+﻿@using TaskManagement.Model.Dto
+@model IEnumerable<TaskManagement.Model.Dto.TaskDto>
 @{
 	ViewData["Title"] = "Index";
 	Layout = "_Layout";
@@ -6,18 +7,7 @@
 
 
 
-@* <!DOCTYPE html>
-<html lang="en">
 
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Safety Alerts</title>
-	<link rel="stylesheet" href="~/assets/css/common.css">
-	<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-</head>
-
-<body> *@
 <section class="main">
 
 	<div id="drawerAddEditProject" class="drawer">
@@ -55,7 +45,21 @@
 					<!-- Your existing title content -->
 				</div>
 			</div>
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
 
+            @if (TempData["ErrorMsg"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMsg"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
 
 			<div class="alerts-title">
 
@@ -67,130 +71,129 @@
 
 					<ul>
 
-						<li>
-							<div class="icon">
+                        <li>
+                            <div class="icon" >
+                                <i class="nt-filter" title="Filter" onclick="Common.showFilter(this, '#divFilters')"></i>
 
-								<i class="nt-filter" title="Filter"
-								   onclick="Common.showFilter(this, '#divFilters')">
-								</i>
+								<div id="divFilters" style="z-index:5" class="filter-sorting">
+                                    <div class="filter-sorting-title">
+                                        <p>Filters</p>
+                                        <a title="close" class="close" onclick="Common.hideFilter('#divFilters')">
+                                            <span class="nt-close-o"></span>
+                                        </a>
+                                    </div>
 
-								<div id="divFilters" class="filter-sorting">
+                                    <form id="taskFilterForm" class="mt-3">
+                                        <div class="row">
+                                            <!-- Assigned To Filter -->
+                                            <div class="col-lg-12 form-floating">
+                                                <select id="filterAssignedTo" name="assignedToId" class="form-control test" style="height: 60px;">
+                                                    <option value="">All Users</option>
+                                                    @foreach (var user in ViewBag.Users as IEnumerable<UserDto> ?? Enumerable.Empty<UserDto>())
+                                                    {
+                                                        <option value="@user.Id">@user.FullName</option>
+                                                    }
+                                                </select>
+                                                <label for="filterAssignedTo">Assigned To</label>
+                                            </div>
 
-									<div class="filter-sorting-title">
-										<p>
-											Filters
-										</p>
-										<a title="close" class="close" onclick="Common.hideFilter('#divFilters')">
-											<span class="nt-close-o"></span>
-										</a>
-									</div>
+                                            <!-- Status Filter -->
+                                            <div class="col-lg-12 form-floating">
+                                                <select id="filterStatus" name="statusId" class="form-control test" style="height: 60px;">
+                                                    <option value="">All Statuses</option>
+													@foreach (var status in ViewBag.TaskStatuses ?? new List<TaskStatus>())
+													{
+														
+															<option value="@status.Id">@status.Name</option>
+														
+													}
+                                                </select>
+                                                <label for="filterStatus">Status</label>
+                                            </div>
 
-									<form class="mt-3">
+                                            <!-- Date Range -->
+                                            <div class="col-lg-6 form-floating test" >
+                                                <input type="date" id="filterStartDate" name="startDate" class="form-control" style="height: 60px;">
+                                                <label for="filterStartDate">From Date</label>
+                                            </div>
+                                            <div class="col-lg-6 form-floating test" style="height: 60px;">
+                                                <input type="date" id="filterEndDate" name="endDate" class="form-control" style="height: 60px;">
+                                                <label for="filterEndDate">To Date</label>
+                                            </div>
 
-										<div class="row">
+                                            <!-- Search Term -->
+                                            <div class="col-lg-12 form-floating test" style="height: 60px;">
+                                                <input type="text" id="filterSearchTerm" name="searchTerm" class="form-control" placeholder="Search tasks...">
+                                                <label for="filterSearchTerm">Search</label>
+                                            </div>
+                                        </div>
+                                    </form>
 
-											<div class="col-lg-12 form-floating">
-												<input id="txtFilterProjectName" type="text" class="form-control"
-													   placeholder="" value="">
-												<label for="txtFilterProjectName">
-													Project Name
-												</label>
-											</div>
+                                    <div class="apply-botttom">
+                                        <a class="cancel" onclick="resetTaskFilters()">
+                                            <span class="nt-refresh"></span>
+                                            Reset
+                                        </a>
+                                        <a class="btn-apply" onclick="applyTaskFilters()">
+                                            Apply Filter
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
 
-											<div class="col-lg-12 form-floating">
-												<input id="txtFilterProjectCode" type="text" class="form-control"
-													   placeholder="" value="">
-												<label for="txtFilterProjectCode">
-													Project Code
-												</label>
-											</div>
+                        <li>
+                            <div class="icon">
+                                <i class="nt-sort" title="Sort" onclick="Common.showFilter(this, '#divSorting')"></i>
+                                <div id="divSorting" style="z-index:5" class="filter-sorting">
+                                    <div class="filter-sorting-title">
+                                        <p>Sort by</p>
+                                        <a title="close" class="close" onclick="Common.hideFilter('#divSorting')">
+                                            <span class="nt-close-o"></span>
+                                        </a>
+                                    </div>
 
-										</div>
+                                    <div class="form-tabs">
+                                        <ul class="ass-des">
+                                            <li class="active" onclick="setSortDirection('asc')">Ascending</li>
+                                            <li onclick="setSortDirection('desc')">Descending</li>
+                                        </ul>
 
-									</form>
+                                        <div class="form-check mb-3">
+                                            <input id="rbDueDate" class="form-check-input" type="radio" name="sortListing" value="DueDate" checked>
+                                            <label class="form-check-label" for="rbDueDate">Due Date</label>
+                                        </div>
 
-									<div class="apply-botttom">
+                                        <div class="form-check mb-3">
+                                            <input id="rbCreatedDate" class="form-check-input" type="radio" name="sortListing" value="CreatedAt">
+                                            <label class="form-check-label" for="rbCreatedDate">Created Date</label>
+                                        </div>
 
-										<a class="cancel">
-											<span class="nt-refresh"></span>
-											Reset
-										</a>
+                                        <div class="form-check mb-3">
+                                            <input id="rbTitle" class="form-check-input" type="radio" name="sortListing" value="Title">
+                                            <label class="form-check-label" for="rbTitle">Title</label>
+                                        </div>
 
-										<a class="btn-apply">
-											Apply Filter
-										</a>
+                                        <div class="form-check mb-5">
+                                            <input id="rbStatus" class="form-check-input" type="radio" name="sortListing" value="Status">
+                                            <label class="form-check-label" for="rbStatus">Status</label>
+                                        </div>
 
-									</div>
+                            
+                                    </div>
 
-								</div>
-
-							</div>
-
-						</li>
-
-						<li>
-							<div class="icon">
-
-								<i class="nt-sort" title="Sort" onclick="Common.showFilter(this, '#divSorting')">
-								</i>
-
-								<div id="divSorting" class="filter-sorting">
-
-									<div class="filter-sorting-title">
-										<p>
-											Sort by
-										</p>
-										<a title="close" class="close" onclick="Common.hideFilter('#divSorting')">
-											<span class="nt-close-o"></span>
-										</a>
-									</div>
-
-									<div class="form-tabs">
-
-										<ul class="ass-des">
-											<li class="active">
-												Ascending
-											</li>
-											<li>
-												Desending
-											</li>
-										</ul>
-
-										<div class="form-check mb-3">
-											<input id="rbProjectName" class="form-check-input" type="radio"
-												   name="sortListing">
-											<label class="form-check-label" for="rbProjectName">
-												Project Name
-											</label>
-										</div>
-
-										<div class="form-check mb-5">
-											<input id="rbProjectCode" class="form-check-input" type="radio"
-												   name="sortListing">
-											<label class="form-check-label" for="rbProjectCode">
-												Project Code
-											</label>
-										</div>
-
-									</div>
-
-
-									<div class="apply-botttom">
-										<a class="cancel">
-											<span class="nt-refresh"></span>
-											Reset
-										</a>
-										<a title="invite" class="btn-apply">
-											Apply Sort
-										</a>
-									</div>
-
-								</div>
-								</a>
-							</div>
-
-						</li>
-
+                                    <div class="apply-botttom">
+                                        <a class="cancel" onclick="resetSorting()">
+                                            <span class="nt-refresh"></span>
+                                            Reset
+                                        </a>
+                                        <a class="btn-apply" onclick="applySorting()">
+                                            Apply Sort
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
 						<li class="invite">
 							<a title="invite" class="btn-invite"
 							   onclick="Common.openDrawer('#drawerAddEditProject')">
@@ -234,13 +237,19 @@
 						<div class="alerts-content-inner">
 							<div class="content-main">
 								<div class="content-last">
-									<span class="closed btn-all-case">
-										<i class="nt-tick"></i>
-										<span class="alert-text">
-											@task.TaskStatus
-										</span>
-									</span>
-
+                                    <span class="btn-all-case @(
+                                        task.TaskStatus switch
+                                        {
+                                            "Done" => "closed",
+                                            "Unassigned" => "contractor-pending",
+                                            "InProgress" => "inspector-pending",
+                                            _ => "to-do" 
+                                        })">
+                                        <i class="nt-tick"></i>
+                                        <span class="alert-text">
+                                            @task.TaskStatus
+                                        </span>
+                                    </span>
 									<div class="edit-links">
 										<em class="nt-more"></em>
 										<div class="link-box">
@@ -251,7 +260,7 @@
 											<!-- Add Comment Link -->
 											<div class="link add-comment-btn" data-task-id="@task.Id">
 												<em class="nt-note"></em>
-												Comment
+												Note
 											</div>
 
 											<div class="link edit-task-btn" data-task-id="@task.Id">
@@ -287,6 +296,208 @@
 	</div>
 </div>
 
+
+@section Scripts {
+
+    <script>
+           // Global variables to track sorting state
+        let currentSortBy = 'DueDate';
+        let currentSortOrder = 'asc';
+
+        function applyTaskFilters() {
+            // Collect filter data
+            const assignedToId = $('#filterAssignedTo').val();
+            const statusId = $('#filterStatus').val();
+            const startDate = $('#filterStartDate').val();
+            const endDate = $('#filterEndDate').val();
+            const searchTerm = $('#filterSearchTerm').val();
+
+            // Construct query string with both filters and sorting
+            const queryParams = new URLSearchParams();
+            if (assignedToId) queryParams.append('assignedToId', assignedToId);
+            if (statusId) queryParams.append('statusId', statusId);
+            if (startDate) queryParams.append('startDate', startDate);
+            if (endDate) queryParams.append('endDate', endDate);
+            if (searchTerm) queryParams.append('searchTerm', searchTerm);
+
+            // Add sorting parameters
+            queryParams.append('sortBy', currentSortBy);
+            queryParams.append('sortOrder', currentSortOrder);
+
+            // Redirect with all parameters
+            window.location.href = '/Admin/TaskIndex?' + queryParams.toString();
+        }
+
+        function resetTaskFilters() {
+            // Reset form fields
+            $('#taskFilterForm')[0].reset();
+
+            // Reset sorting to defaults
+            currentSortBy = 'DueDate';
+            currentSortOrder = 'asc';
+            $('input[name="sortListing"][value="DueDate"]').prop('checked', true);
+            $('.ass-des li').removeClass('active');
+            $('.ass-des li:first-child').addClass('active');
+
+            // Apply with cleared filters
+            applyTaskFilters();
+        }
+
+        function setSortDirection(direction) {
+            currentSortOrder = direction;
+            $('.ass-des li').removeClass('active');
+            $(`.ass-des li[onclick="setSortDirection('${direction}')"]`).addClass('active');
+        }
+
+        function applySorting() {
+            // Determine which sort field is selected
+            currentSortBy = $('input[name="sortListing"]:checked').next('label').text().replace(' ', '');
+
+            // Close the sorting panel
+            Common.hideFilter('#divSorting');
+
+            // Reapply filters with new sorting
+            applyTaskFilters();
+        }
+
+        function resetSorting() {
+            // Reset to default sorting
+            currentSortBy = 'DueDate';
+            currentSortOrder = 'asc';
+
+            // Update UI
+            $('input[name="sortListing"][id="rbDueDate"]').prop('checked', true);
+            $('.ass-des li').removeClass('active');
+            $('.ass-des li:first-child').addClass('active');
+
+            // Don't apply automatically - let user click "Apply Sort"
+        }
+
+    </script>
+
+    <script>
+        // Wait for the DOM to load
+        document.addEventListener("DOMContentLoaded", function () {
+            const alerts = document.querySelectorAll('.alert');
+            if (alerts.length > 0) {
+                setTimeout(() => {
+                    alerts.forEach(alert => {
+                        alert.classList.remove('show');
+                        alert.classList.add('fade');
+                        // Optional: fully remove from DOM after fade
+                        setTimeout(() => alert.remove(), 500);
+                    });
+                }, 2500); // Delay in milliseconds (2.5 seconds)
+            }
+        });
+    </script>
+}
+
+
+
+
+@* 
+<script>
+    // Current filter and sort state
+    let currentFilters = {};
+    let sortField = 'DueDate';
+    let sortDirection = 'asc';
+
+    function applyTaskFilters() {
+        // Get form data
+        const formData = $('#taskFilterForm').serializeArray();
+        currentFilters = {};
+
+        formData.forEach(item => {
+            if (item.value) {
+                currentFilters[item.name] = item.value;
+            }
+        });
+
+        // Close filter panel
+        Common.hideFilter('#divFilters');
+
+        // Reload tasks with filters
+        loadTasks();
+    }
+
+    function resetTaskFilters() {
+        $('#taskFilterForm')[0].reset();
+        currentFilters = {};
+        loadTasks();
+    }
+
+    function setSortDirection(direction) {
+        sortDirection = direction;
+        $('.ass-des li').removeClass('active');
+        $(`.ass-des li:contains(${direction === 'asc' ? 'Ascending' : 'Descending'})`).addClass('active');
+    }
+
+    function applySorting() {
+        sortField = $('input[name="sortListing"]:checked').attr('id').replace('rb', '');
+        Common.hideFilter('#divSorting');
+        loadTasks();
+    }
+
+    function resetSorting() {
+        $('input[name="sortListing"][id="rbDueDate"]').prop('checked', true);
+        setSortDirection('asc');
+    }
+        function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD format
+    }
+
+       function loadTasks() {
+        // Combine filters and sorting
+        const params = {
+            ...currentFilters,
+            // Convert dates to proper format
+            startDate: currentFilters.startDate ? formatDate(currentFilters.startDate) : undefined,
+            endDate: currentFilters.endDate ? formatDate(currentFilters.endDate) : undefined
+        };
+
+        // Show loading indicator
+        Common.showLoader();
+
+        // Remove empty parameters
+        Object.keys(params).forEach(key => {
+            if (params[key] === undefined || params[key] === '') {
+                delete params[key];
+            }
+        });
+
+        // Call MVC controller action with filters
+        $.ajax({
+            url: '/User/TaskIndex',
+            type: 'GET',
+            data: params,
+            success: function(html) {
+                // Since we're returning a View, we can replace the content
+                $('#taskListContainer').html(html);
+            },
+            error: function(xhr) {
+                alert('Error loading tasks: ' + xhr.responseText);
+            },
+            complete: function() {
+                Common.hideLoader();
+            }
+        });
+    }
+
+    function updateTaskList(tasks) {
+        // Implement your logic to update the task list HTML
+        // This will depend on how your task list is structured
+        console.log('Tasks loaded:', tasks);
+        // Example: $('#taskListContainer').html(renderTasks(tasks));
+    }
+
+    // Initialize
+    $(document).ready(function() {
+        // Load initial tasks
+        loadTasks();
+    });
+</script> *@
 
 @* <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 <script src="~/assets/js/script.js"></script>

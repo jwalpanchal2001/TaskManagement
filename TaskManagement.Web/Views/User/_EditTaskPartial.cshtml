@@ -1,0 +1,124 @@
+﻿	@using TaskManagement.Model.Dto
+	@model TaskManagement.Model.Dto.TaskDto
+
+	<div id="drawerEditUser" class="drawer">
+		<div class="overlay" style="display: none;"></div>
+		<div class="drawer-inner">
+			<div class="drawer-title">
+				<a title="back" onclick="Common.closeDrawer('#drawerEditUser')">
+					<i class="nt-angle-prev"></i>
+				</a>
+				<h1>Edit User</h1>
+			</div>
+
+			<form id="createTaskForm" class="drawer-form view-drawer" asp-action="UpdateTask" asp-controller="User" method="post">
+				<div id="validationSummary" class="text-danger mb-2"></div>
+				<input type="hidden" asp-for="Id" />
+
+				<div class="row">
+					<div class="form-title">Task Information</div>
+
+					<div class="col-lg-6 data-detail">
+						<div class="data-label">Title</div>
+						<div class="data-val">
+							<input type="text" asp-for="Title" class="form-control" required maxlength="200" />
+							<span asp-validation-for="Title" class="text-danger"></span>
+						</div>
+					</div>
+
+
+					<div class="col-lg-6 data-detail">
+						<div class="data-label">Due Date</div>
+						<div class="data-val">
+							<input type="datetime-local" asp-for="DueDate" class="form-control" />
+							<span asp-validation-for="DueDate" class="text-danger"></span>
+						</div>
+					</div>
+
+			
+						<select asp-for="UserId" class="form-control" id="userDropdown" hidden>
+							<option value="">-- Unassigned --</option>
+							@foreach (var user in ViewBag.Users ?? new List<UserDto>())
+							{
+								<option value="@user.Id">@user.FullName</option>
+							}
+						</select>
+						<span asp-validation-for="UserId" class="text-danger"></span>
+			
+
+
+					<div class="col-lg-6 data-detail">
+						<div class="data-label">Status</div>
+						<div class="data-val">
+						<select asp-for="TaskStatusId" class="form-control" id="taskStatusDropdown">
+							@foreach (var status in ViewBag.TaskStatuses ?? new List<TaskStatus>())
+							{
+								@if (status.Id != 1) // Skip status with ID = 1
+								{
+									<option value="@status.Id">@status.Name</option>
+								}
+							}
+							</select>
+							<span asp-validation-for="TaskStatusId" class="text-danger"></span>
+						</div>
+					</div>
+
+					<div class="col-lg-12 data-detail">
+						<div class="data-label">Description</div>
+						<div class="data-val">
+							<textarea asp-for="Description" class="form-control" rows="4"></textarea>
+							<span asp-validation-for="Description" class="text-danger"></span>
+						</div>
+					</div>
+				</div>
+
+				<div class="invite-botttom">
+					<button type="submit" class="btn-invite">Save</button>
+					<a class="cancel" onclick="Common.closeDrawer('#drawerAddEditProject')">
+						<i class="nt-backward"></i>
+						Cancel
+					</a>
+				</div>
+			</form>
+		</div>
+	</div>
+
+
+		<partial name="_ValidationScriptsPartial" />
+
+		<script>
+			$(document).ready(function () {
+
+
+			// Form submission logic remains unchanged
+			$('#createTaskForm').on('submit', function (e) {
+				e.preventDefault();
+				Common.showLoader();
+
+				$.ajax({
+					url: $(this).attr('action'),
+					type: 'POST',
+					data: $(this).serialize(),
+					success: function (response) {
+						if (response.success) {
+							Common.closeDrawer('#drawerAddEditProject');
+							location.reload();
+						} else {
+							$('#validationSummary').html(response.message || 'Failed to create task');
+						}
+					},
+					error: function (xhr) {
+						if (xhr.status === 400) {
+							$('#validationSummary').html(xhr.responseText);
+						} else {
+							$('#validationSummary').html('An error occurred');
+						}
+					},
+					complete: function () {
+						Common.hideLoader();
+					}
+				});
+			});
+		});
+
+		</script>

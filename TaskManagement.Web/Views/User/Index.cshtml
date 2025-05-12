@@ -1,0 +1,203 @@
+﻿@using System.Security.Claims
+@model List<TaskManagement.Model.Dto.TaskDto>
+@{
+	ViewData["Title"] = "Index";
+	Layout = "_Layout";
+}
+
+
+
+@* <!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Safety Alerts</title>
+	<link rel="stylesheet" href="~/assets/css/common.css">
+	<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+
+<body> *@
+<section class="main">
+
+	<div id="drawerAddEditProject" class="drawer">
+		<div class="overlay" style="display: none;"></div>
+		<div class="drawer-inner">
+			@await Html.PartialAsync("_CreateTaskPartial", new TaskManagement.Model.Dto.CreateTaskDto())
+		</div>
+	</div>
+
+	<div id="drawerViewTask" class="drawer">
+		<!-- Content will be loaded dynamically -->
+	</div>
+	<div id="drawerEditUser" class="drawer"></div>
+	<div id="drawerAddComment" class="drawer"></div>
+
+	<div class="container">
+
+		<div class="alerts-main">
+
+
+			@if (TempData["SuccessMessage"] != null)
+			{
+				<div class="alert alert-success alert-dismissible fade show" role="alert">
+					@TempData["SuccessMessage"]
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+			}
+
+			@if (TempData["ErrorMsg"] != null)
+			{
+				<div class="alert alert-danger alert-dismissible fade show" role="alert">
+					@TempData["ErrorMsg"]
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+				</div>
+			}
+
+			<div class="alerts-title">
+
+				<h1>
+					Task List
+				</h1>
+
+				<div class="alerts-icon">
+
+					<ul>
+
+
+						<li class="invite">
+							<a title="invite" class="btn-invite"
+							onclick="Common.openDrawer('#drawerAddEditProject')">
+								Add My Task
+							</a>
+						</li>
+
+					</ul>
+
+				</div>
+
+			</div>
+
+			<div class="alerts-content">
+				@foreach (var task in Model)
+				{
+					<div class="alerts-content-single">
+						<div class="alerts-content-inner">
+							<div class="content-main">
+								<div class="content-title">
+									<span>@task.Title</span>
+								</div>
+								<div class="content-desc">
+									@task.Description
+								</div>
+							</div>
+						</div>
+
+						<div class="alerts-content-inner">
+							<div class="content-main">
+								<div class="content-desc">
+									<span>Created By: @task.CreatedByName</span>
+									@if (task.DueDate.HasValue)
+									{
+										<span> | Due: @task.DueDate.Value.ToString("MMM dd, yyyy")</span>
+									}
+								</div>
+							</div>
+						</div>
+
+						<div class="alerts-content-inner">
+							<div class="content-main">
+								<div class="content-last">
+									<span class="closed btn-all-case">
+										<i class="nt-tick"></i>
+										<span class="alert-text">
+											@task.TaskStatus
+										</span>
+									</span>
+
+									<div class="edit-links">
+										<em class="nt-more"></em>
+										<div class="link-box" style="width: 140px;">
+											<div class="link view-task-btn" data-task-id="@task.Id">
+												<em class="nt-eye"></em>
+												View
+											</div>
+											<!-- Add Comment Link -->
+											<div class="link add-comment-btn" data-task-id="@task.Id">
+												<em class="nt-note"></em>
+												Note
+											</div>
+
+											@if (task.CreatedById == task.UserId)
+											{
+												<div class="link edit-user-task-btn" data-task-id="@task.Id">
+													<em class="nt-edit"></em>
+													Edit
+												</div>
+
+												<div class="link delete-user-task" data-taskid="@task.Id">
+													<em class="nt-bin"></em>
+													Delete
+												</div>
+											}
+										
+
+												<div class="link update-status-task" data-taskid="@task.Id">
+													<em class="nt-edit"></em>
+													Update State
+												</div>
+											
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				}
+			</div>
+
+		</div>
+
+	</div>
+
+</section>
+
+<div class="loading-wrapper">
+	<div class="loading-content">
+	</div>
+	<div class="loading-text position-absolute">
+		Loading...
+	</div>
+</div>
+
+@section Scripts {
+	<script>
+		// Wait for the DOM to load
+		document.addEventListener("DOMContentLoaded", function () {
+			const alerts = document.querySelectorAll('.alert');
+			if (alerts.length > 0) {
+				setTimeout(() => {
+					alerts.forEach(alert => {
+						alert.classList.remove('show');
+						alert.classList.add('fade');
+						// Optional: fully remove from DOM after fade
+						setTimeout(() => alert.remove(), 500);
+					});
+				}, 2500); // Delay in milliseconds (2.5 seconds)
+			}
+		});
+	</script>
+}
+
+
+@* <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script src="~/assets/js/script.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+</body>
+
+</html> *@

@@ -40,8 +40,8 @@ public class UserService : BaseServices, IUserService
     {
         try
         {
-            var response = await GetFlurlRequestWithToken("users", $"?includeDeleted={includeDeleted}")
-                .GetJsonAsync<List<UserDto>>();
+            var request = await GetFlurlRequestWithAutoRefreshAsync("users", $"?includeDeleted={includeDeleted}");
+            var response = await request.GetJsonAsync<List<UserDto>>();
 
             return response ?? new List<UserDto>();
         }

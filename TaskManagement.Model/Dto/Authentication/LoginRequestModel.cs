@@ -10,6 +10,7 @@ namespace TaskManagement.Model.Dto;
 public class LoginRequestModel
 {
     [Required]
+    [EmailAddress]
     public string Username { get; set; }
 
     [Required]

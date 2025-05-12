@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using TaskManagement.Api.DependencyInjection;
+using TaskManagement.Api.Middleware;
 using TaskManagement.Business.Mapping;
 using TaskManagement.Entity.Model;
 using TaskManagement.Model.Dto;
@@ -59,7 +60,7 @@ public class Program
             {
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"])), // Use UTF8
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"])), // Use UTF8
                 ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
                 ValidAudience = builder.Configuration["JwtSettings:Audience"],
                 ValidateIssuer = true,
@@ -140,10 +141,9 @@ public class Program
         }
 
         app.UseHttpsRedirection();
+        app.UseMiddleware<TokenRefreshMiddleware>();
 
-        //app.UseMiddleware<TokenRefreshMiddleware>();
         app.UseAuthentication();
-
         app.UseAuthorization();
 
 

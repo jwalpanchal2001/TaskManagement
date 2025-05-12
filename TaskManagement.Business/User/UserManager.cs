@@ -16,12 +16,14 @@ public class UserManager : IUserManager
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
     private readonly IPasswordHasher<Entity.Model.User> _passwordHasher;
+    private readonly ITaskRepository _taskRepository;
 
-    public UserManager(IUserRepository userRepository, IMapper mapper, IPasswordHasher<TaskManagement.Entity.Model.User> passwordHasher)
+    public UserManager(IUserRepository userRepository, IMapper mapper, IPasswordHasher<TaskManagement.Entity.Model.User> passwordHasher , ITaskRepository taskRepository)
     {
         _userRepository = userRepository;
         _mapper = mapper;
         _passwordHasher = passwordHasher;
+        _taskRepository = taskRepository;
     }
 
     public async Task<UserDto> GetUserByIdAsync(int id)
@@ -70,7 +72,27 @@ public class UserManager : IUserManager
             throw new KeyNotFoundException("User not found");
         }
 
-        await _userRepository.DeleteUserAsync(id);
+        var user = await _userRepository.GetUserByIdAsync(id);
+        if (user == null) return;
+
+        user.IsDeleted = true;
+        await _userRepository.UpdateUserAsync(user);
+
+        // Soft delete tasks created by the user
+        var createdTasks = await _taskRepository.GetTasksCreatedByUserAsync(id);
+        foreach (var task in createdTasks)
+        {
+            task.IsDeleted = true;
+            await _taskRepository.UpdateTaskAsync(task);
+        }
+
+        // Unassign tasks assigned to the user
+        var assignedTasks = await _taskRepository.GetTasksByUserIdAsync(id);
+        foreach (var task in assignedTasks)
+        {
+            task.UserId = null;
+            await _taskRepository.UpdateTaskAsync(task);
+        }
     }
 
     public async Task<bool> UserExistsAsync(int id)

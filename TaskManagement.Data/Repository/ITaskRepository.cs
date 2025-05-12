@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TaskManagement.Entity.Model;
+using TaskManagement.Model.Dto.UserTask;
 
 namespace TaskManagement.Data.Repository;
 
@@ -20,5 +21,9 @@ public interface ITaskRepository
     Task<bool> IsTaskUnassignedAsync(int taskId);
     Task AssignTaskToUserAsync(int taskId, int userId);
     Task UnassignTaskAsync(int taskId);
+
+    Task<List<TaskDto1>> GetFilteredTasksAsync(TaskFilterModel filter);
+    Task<bool> UpdateTaskStatus(int taskId, int statusId);
+    Task<IEnumerable<Tasks>> GetTasksCreatedByUserAsync(int userId);
 
 }
