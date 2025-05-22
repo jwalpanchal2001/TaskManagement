@@ -292,8 +292,8 @@ public class TasksController : ControllerBase
 
 
 
-    [HttpGet("FilterApply")]
-    public async Task<ActionResult<IEnumerable<TaskDto>>> GetFilteredTasks([FromQuery] TaskFilterModel filter)
+    [HttpPost("FilterApply")] // Changed to HttpPost
+    public async Task<ActionResult<IEnumerable<TaskDto>>> GetFilteredTasks([FromBody] TaskFilterModel filter)
     {
         try
         {

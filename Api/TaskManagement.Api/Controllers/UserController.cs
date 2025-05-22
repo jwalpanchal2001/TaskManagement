@@ -28,15 +28,11 @@ public class UsersController : ControllerBase
         }
         catch (UnauthorizedAccessException)
         {
-            // Token is invalid or expired
             return Unauthorized(new { success = false, message = "Unauthorized access. Token may be expired or invalid." });
         }
-        catch (Exception ex)
-        {
-            // Other unhandled exceptions
-            return StatusCode(500, new { success = false, message = "An error occurred while fetching users.", error = ex.Message });
-        }
+      
     }
+
 
     [HttpGet("{id}")]
     public async Task<ActionResult<UserDto>> GetUser(int id)
@@ -104,12 +100,5 @@ public class UsersController : ControllerBase
             return NotFound(ex.Message);
         }
     }
-
-
-
-
-
-
-
 
 }

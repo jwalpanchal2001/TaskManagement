@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Flurl.Http;
 using Microsoft.AspNetCore.Http;
@@ -10,101 +8,104 @@ using TaskManagement.Model.Api;
 using TaskManagement.Model.Dto;
 using TaskManagement.Service.BaseService;
 
-namespace TaskManagement.Service.Admin;
-
-public class UserService : BaseServices, IUserService
+namespace TaskManagement.Service.Admin
 {
-    public UserService(IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor) { }
-
-    public async Task<ApiResponseModel> CreateUserAsync(CreateUserDto createUserDto)
+    public class UserService : BaseServices, IUserService
     {
-        try
-        {
-            var response = await GetFlurlRequestWithToken("Users", "")
-                .PostJsonAsync(createUserDto)
-                .ReceiveJson<ApiResponseModel>();
+        public UserService(IHttpContextAccessor httpContextAccessor) : base(httpContextAccessor) { }
 
-            return response ?? new ApiResponseModel(false, "Empty response from server.");
-        }
-        catch (FlurlHttpException ex)
+        public async Task<ApiResponseModel> CreateUserAsync(CreateUserDto createUserDto)
         {
-            var error = await ex.GetResponseJsonAsync<ApiResponseModel>();
-            return error ?? new ApiResponseModel(false, "Unexpected error.");
+            try
+            {
+                return await SendAuthorizedRequestAsync("users", "",
+                    req => req.PostJsonAsync(createUserDto).ReceiveJson<ApiResponseModel>());
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw;
+            }
+            catch (FlurlHttpException ex)
+            {
+                var error = await ex.GetResponseJsonAsync<ApiResponseModel>();
+                return error ?? new ApiResponseModel(false, "Unexpected error.");
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponseModel(false, ex.Message);
+            }
         }
-        catch (Exception ex)
+        public async Task<List<UserDto>> GetAllUsersAsync(bool includeDeleted = false)
         {
-            return new ApiResponseModel(false, ex.Message);
+            try
+            {
+                return await SendAuthorizedRequestAsync("users", $"?includeDeleted={includeDeleted}",
+                    req => req.GetJsonAsync<List<UserDto>>());
+            }
+            catch (Exception ex)
+            {
+                throw new UnauthorizedAccessException("Unauthorized");
+            }
         }
-    }
-    public async Task<List<UserDto>> GetAllUsersAsync(bool includeDeleted = false)
-    {
-        try
-        {
-            var request = await GetFlurlRequestWithAutoRefreshAsync("users", $"?includeDeleted={includeDeleted}");
-            var response = await request.GetJsonAsync<List<UserDto>>();
 
-            return response ?? new List<UserDto>();
-        }
-        catch
+        public async Task<UserDto> GetUserByIdAsync(int id)
         {
-            return new List<UserDto>();
+            try
+            {
+                return await SendAuthorizedRequestAsync("users", $"{id}",
+                    req => req.GetJsonAsync<UserDto>());
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw;
+            }
+            catch
+            {
+                return null;
+            }
         }
-    }
 
-    public async Task<UserDto> GetUserByIdAsync(int id)
-    {
-        try
+        public async Task<bool> UpdateUserAsync(UpdateUserDto model)
         {
-            var response = await GetFlurlRequestWithToken("users", $"{id}")
-                .GetJsonAsync<UserDto>();
+            try
+            {
+                await SendAuthorizedRequestAsync<object>("users", $"{model.Id}",
+                    req => req.PutJsonAsync(model).ContinueWith(_ => (object)null));
 
-            return response;
+                return true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw;
+            }
+            catch
+            {
+                return false;
+            }
         }
-        catch (FlurlHttpException ex)
-        {
-            var error = await ex.GetResponseJsonAsync<UserDto>();
-            return error;
-        }
-      
-    }
 
-
-    public async Task<bool> UpdateUserAsync(UpdateUserDto model)
-    {
-        try
+        public async Task<bool> DeleteUserAsync(int id)
         {
-            await GetFlurlRequestWithToken("users", $"{model.Id}")
-                .PutJsonAsync(model);
+            try
+            {
+                await SendAuthorizedRequestAsync<object>("users", $"{id}",
+                    req => req.DeleteAsync().ContinueWith(_ => (object)null));
 
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task<bool> DeleteUserAsync(int id)
-    {
-        try
-        {
-            await GetFlurlRequestWithToken("users", $"{id}")
-                .DeleteAsync();
-
-            return true;
-        }
-        catch (FlurlHttpException ex)
-        {
-            // Handle specific status codes if needed
-            if (ex.StatusCode == (int)HttpStatusCode.NotFound)
+                return true;
+            }
+            catch (FlurlHttpException ex) when (ex.StatusCode == (int)HttpStatusCode.NotFound)
             {
                 throw new KeyNotFoundException("User not found");
             }
-
-            return false;
+            catch (UnauthorizedAccessException)
+            {
+                throw;
+            }
+            catch
+            {
+                return false;
+            }
         }
+
     }
-
-
-
 }

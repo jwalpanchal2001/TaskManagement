@@ -9,6 +9,7 @@ using TaskManagement.Model.ViewModel;
 using TaskManagement.Service.Login;
 using Flurl.Http;
 using TaskManagement.Model.Api;
+using TaskManagement.Entity.Model;
 
 namespace TaskManagement.Web.Controllers
 {
@@ -113,6 +114,7 @@ namespace TaskManagement.Web.Controllers
                 var resultObj = JObject.Parse(response.Result.ToString());
                 bool isAdmin = resultObj["isAdmin"]?.ToObject<bool>() ?? false;
 
+
                 if (tokenResult != null)
                 {
                     // Create claims identity
@@ -144,6 +146,14 @@ namespace TaskManagement.Web.Controllers
                     });
 
                     HttpContext.Response.Cookies.Append("refresh_token", tokenResult.RefreshToken, new CookieOptions
+                    {
+                        HttpOnly = true,
+                        Secure = true,
+                        SameSite = SameSiteMode.Strict,
+                        Expires = DateTimeOffset.UtcNow.AddDays(1)
+                    });
+
+                    HttpContext.Response.Cookies.Append("user_id", tokenResult.UserId.ToString(), new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = true,

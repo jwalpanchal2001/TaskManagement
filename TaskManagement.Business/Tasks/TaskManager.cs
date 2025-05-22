@@ -158,9 +158,39 @@ public class TaskManager : ITaskManager
     public async Task<List<TaskDto>> GetFilteredTasksAsync(TaskFilterModel filter)
     {
         var tasks = await _taskRepository.GetFilteredTasksAsync(filter);
-        return tasks.Adapt<List<TaskDto>>();
+        var sortedTasks = ApplySorting(tasks, filter.SortBy, filter.SortOrder);
+
+        return sortedTasks.Adapt<List<TaskDto>>();
     }
 
+
+    private List<TaskDto1> ApplySorting(List<TaskDto1> tasks, string sortBy, string sortOrder)
+    {
+        if (string.IsNullOrWhiteSpace(sortBy)) sortBy = "DueDate";
+        if (string.IsNullOrWhiteSpace(sortOrder)) sortOrder = "desc";
+        var query = tasks.AsQueryable();
+
+        switch (sortBy.ToLower())
+        {
+            case "title":
+                query = sortOrder == "asc" ? query.OrderBy(t => t.Title) : query.OrderByDescending(t => t.Title);
+                break;
+            case "createdat":
+                query = sortOrder == "asc" ? query.OrderBy(t => t.CreatedAt) : query.OrderByDescending(t => t.CreatedAt);
+                break;
+            case "duedate":
+                query = sortOrder == "asc" ? query.OrderBy(t => t.DueDate) : query.OrderByDescending(t => t.DueDate);
+                break;
+            case "status":
+                query = sortOrder == "asc" ? query.OrderBy(t => t.TaskStatus) : query.OrderByDescending(t => t.TaskStatus);
+                break;
+            default:
+                query = sortOrder == "asc" ? query.OrderBy(t => t.DueDate) : query.OrderByDescending(t => t.DueDate);
+                break;
+        }
+
+        return query.ToList();
+    }
     public async Task<bool> UpdateStatusAsync(int taskId, int statusId)
     {
         var task = await _taskRepository.UpdateTaskStatus(taskId, statusId);

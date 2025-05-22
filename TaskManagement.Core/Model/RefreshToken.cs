@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TaskManagement.Entity.Helper;
 
 namespace TaskManagement.Entity.Model;
 
@@ -16,7 +17,7 @@ public class RefreshToken
 
     public DateTime ExpiresAt { get; set; }
 
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedAt { get; set; } = TimeZoneHelper.GetIndianTime();
 
     public string? CreatedByIp { get; set; }
 

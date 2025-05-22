@@ -43,7 +43,8 @@ public class LoginManager : ILoginManager
             AccessToken = accessToken,
             RefreshToken = refreshToken.Token,
             isAdmin = user.IsAdmin,
-            ExpiresIn = refreshToken.ExpiresAt
+            ExpiresIn = refreshToken.ExpiresAt,
+            UserId = user.Id
         };
     }
 

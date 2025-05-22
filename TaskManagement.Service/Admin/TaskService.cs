@@ -28,10 +28,9 @@ public class TaskService : BaseServices, ITaskService
 
             return new ApiResponseModel(true, "Created Succesfully.", response);
         }
-        catch (FlurlHttpException ex)
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
         {
-            var error = await ex.GetResponseJsonAsync<ApiResponseModel>();
-            return error ?? new ApiResponseModel(false, "Unexpected error.");
+            throw new UnauthorizedAccessException("Unauthorized");
         }
         catch (Exception ex)
         {
@@ -52,10 +51,9 @@ public class TaskService : BaseServices, ITaskService
 
             return new ApiResponseModel(true, "Created Succesfully.", response);
         }
-        catch (FlurlHttpException ex)
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
         {
-            var error = await ex.GetResponseJsonAsync<ApiResponseModel>();
-            return error ?? new ApiResponseModel(false, "Unexpected error.");
+            throw new UnauthorizedAccessException("Unauthorized");
         }
         catch (Exception ex)
         {
@@ -73,6 +71,10 @@ public class TaskService : BaseServices, ITaskService
 
             return response ?? new List<TaskDto>();
         }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
+        }
         catch (FlurlHttpException ex)
         {
             // Log error if needed
@@ -88,6 +90,10 @@ public class TaskService : BaseServices, ITaskService
                 .GetJsonAsync<TaskDto>();
 
             return response;
+        }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
         }
         catch (FlurlHttpException ex)
         {
@@ -109,7 +115,11 @@ public class TaskService : BaseServices, ITaskService
                 .PutJsonAsync(model);
 
             return true;
-        }   
+        }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
+        }
         catch (FlurlHttpException ex)
         {
             if (ex.StatusCode == (int)HttpStatusCode.NotFound)
@@ -129,6 +139,10 @@ public class TaskService : BaseServices, ITaskService
                 .DeleteAsync();
 
             return true;
+        }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
         }
         catch (FlurlHttpException ex)
         {
@@ -151,6 +165,10 @@ public class TaskService : BaseServices, ITaskService
 
             return response ?? new List<TaskDto>();
         }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
+        }
         catch
         {
             return new List<TaskDto>();
@@ -166,6 +184,10 @@ public class TaskService : BaseServices, ITaskService
 
             return true;
         }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
+        }
         catch
         {
             return false;
@@ -180,7 +202,11 @@ public class TaskService : BaseServices, ITaskService
                 GetJsonAsync<List<TaskStateDto>>();
             return response ?? new List<TaskStateDto>();
         }
-        catch(FlurlHttpException ex)
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
+        }
+        catch (FlurlHttpException ex)
         {
             throw ex;
         }
@@ -195,6 +221,10 @@ public class TaskService : BaseServices, ITaskService
                 .ReceiveJson<TaskDetails>();
 
             return response;
+        }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
         }
         catch (FlurlHttpException ex)
         {
@@ -211,6 +241,10 @@ public class TaskService : BaseServices, ITaskService
                 .DeleteAsync();
 
             return true;
+        }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
         }
         catch (FlurlHttpException ex)
         {
@@ -236,6 +270,10 @@ public class TaskService : BaseServices, ITaskService
 
             return await response.GetJsonAsync<List<TaskDto>>();
         }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
+        }
         catch (FlurlHttpException ex)
         {
 
@@ -255,39 +293,19 @@ public class TaskService : BaseServices, ITaskService
         }
     }
 
-
-    public async Task<List<TaskDto>> GetFilteredTasksAsync(
-    bool includeDeleted = false,
-    int? assignedToId = null,
-    int? statusId = null,
-    DateTime? startDate = null,
-    DateTime? endDate = null,
-    string searchTerm = null)
+    public async Task<List<TaskDto>> GetFilteredTasksAsync(TaskFilterModel filter)
     {
         try
         {
-            // Build query parameters
-            var queryParams = new Dictionary<string, object>
-            {
-                ["includeDeleted"] = includeDeleted
-            };
-
-            if (assignedToId.HasValue)
-                queryParams["assignedToId"] = assignedToId.Value;
-            if (statusId.HasValue)
-                queryParams["statusId"] = statusId.Value;
-            if (startDate.HasValue)
-                queryParams["startDate"] = startDate.Value.ToString("yyyy-MM-dd");
-            if (endDate.HasValue)
-                queryParams["endDate"] = endDate.Value.ToString("yyyy-MM-dd");
-            if (!string.IsNullOrEmpty(searchTerm))
-                queryParams["searchTerm"] = searchTerm;
-
             var response = await GetFlurlRequestWithToken("Tasks", "FilterApply")
-                .SetQueryParams(queryParams)
-                .GetJsonAsync<List<TaskDto>>();
+                .PostJsonAsync(filter)
+                .ReceiveJson<List<TaskDto>>();
 
             return response ?? new List<TaskDto>();
+        }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
         }
         catch (FlurlHttpException ex)
         {
@@ -295,6 +313,7 @@ public class TaskService : BaseServices, ITaskService
             return new List<TaskDto>();
         }
     }
+
 
     public async Task<bool> UpdateStatusAsync(int taskId, int statusId)
     {
@@ -305,6 +324,10 @@ public class TaskService : BaseServices, ITaskService
                 .PostAsync(null); // You can use PostAsync(null) for empty body
 
             return true;
+        }
+        catch (FlurlHttpException ex) when (ex.Call.Response?.StatusCode == 401)
+        {
+            throw new UnauthorizedAccessException("Unauthorized");
         }
         catch (FlurlHttpException ex)
         {

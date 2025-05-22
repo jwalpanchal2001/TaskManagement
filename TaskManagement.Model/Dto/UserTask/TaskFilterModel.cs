@@ -15,6 +15,9 @@ public class TaskFilterModel
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public string? SearchTerm { get; set; }
+    // sorting 
+    public string? SortBy { get; set; } = "DueDate";
+    public string? SortOrder { get; set; } = "desc";
 
-    
+
 }

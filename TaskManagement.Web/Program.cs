@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using TaskManagement.Service.Admin;
 using TaskManagement.Service.Login;
+using TaskManagement.Web.Middleware;
 
 namespace TaskManagement.Web
 {
@@ -25,6 +26,11 @@ namespace TaskManagement.Web
                     options.SlidingExpiration = true;
 
                 });
+
+            builder.Services.AddControllersWithViews(options =>
+            {
+                options.Filters.Add<UnauthorizedRedirectFilter>();
+            });
 
 
 
@@ -51,20 +57,6 @@ namespace TaskManagement.Web
 
             app.UseAuthentication();
             app.UseAuthorization();
-
-            app.Use(async (context, next) =>
-            {
-                await next();
-
-                if (context.Response.StatusCode == 401)
-                {
-                    context.Response.Redirect($"/Account/Login?message=session_expired");
-                }
-                else if (context.Response.StatusCode == 403)
-                {
-                    context.Response.Redirect($"/Account/AccessDenied?message=access_denied");
-                }
-            });
 
             app.MapControllerRoute(
                 name: "default",

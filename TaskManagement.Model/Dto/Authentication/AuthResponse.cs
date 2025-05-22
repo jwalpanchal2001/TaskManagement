@@ -13,4 +13,5 @@ public class AuthResponse
     public string RefreshToken { get; set; }
     public bool? isAdmin { get; set; }
     public DateTime ExpiresIn { get; set; }
+    public int UserId { get; set; }
 }

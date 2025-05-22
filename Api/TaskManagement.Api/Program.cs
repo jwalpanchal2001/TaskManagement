@@ -96,6 +96,8 @@ public class Program
         builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
         {
             containerBuilder.RegisterModule<AuthDependencyManager>();
+            containerBuilder.RegisterModule<TaskDependencyManager>();
+            containerBuilder.RegisterModule<UserDependencyManager>();
         });
 
 
@@ -141,7 +143,7 @@ public class Program
         }
 
         app.UseHttpsRedirection();
-        app.UseMiddleware<TokenRefreshMiddleware>();
+        //app.UseMiddleware<TokenRefreshMiddleware>();
 
         app.UseAuthentication();
         app.UseAuthorization();

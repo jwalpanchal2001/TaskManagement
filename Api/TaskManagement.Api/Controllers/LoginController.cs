@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using TaskManagement.Business.Authentication;
 using TaskManagement.Data.Repository.Authentication;
+using TaskManagement.Entity.Helper;
 using TaskManagement.Entity.Model;
 using TaskManagement.Model.Api;
 using TaskManagement.Model.Dto;
@@ -38,6 +39,7 @@ public class LoginController : Controller
                 accessToken = authResponse.AccessToken,
                 refreshToken = authResponse.RefreshToken,
                 isAdmin = authResponse.isAdmin,
+                userId = authResponse.UserId,
 
             };
 
@@ -94,11 +96,12 @@ public class LoginController : Controller
 
         var latestRefreshToken = await _authRepository.GetLatestRefreshTokenAsync(user.Id);
 
-        if (latestRefreshToken == null || !latestRefreshToken.IsActive)
+        var nowInIST = TimeZoneHelper.GetIndianTime();
+
+        if (latestRefreshToken == null || latestRefreshToken.ExpiresAt <= nowInIST || !latestRefreshToken.IsActive)
         {
             return Unauthorized();
         }
-
         // Revoke old refresh token
         latestRefreshToken.RevokedAt = DateTime.UtcNow;
         await _authRepository.UpdateRefreshTokenAsync(latestRefreshToken);

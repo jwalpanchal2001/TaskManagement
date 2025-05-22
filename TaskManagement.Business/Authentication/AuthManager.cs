@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using TaskManagement.Data.Repository.Authentication;
+using TaskManagement.Entity.Helper;
 using TaskManagement.Entity.Model;
 using TaskManagement.Model.Dto;
 
@@ -53,8 +54,8 @@ public class AuthManager : IAuthManager
         return new RefreshToken
         {
             Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-            ExpiresAt = DateTime.UtcNow.AddDays(_jwtSettings.RefreshTokenExpirationDays),
-            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = TimeZoneHelper.GetIndianTime().AddMinutes(_jwtSettings.RefreshTokenExpirationDays),
+            CreatedAt = TimeZoneHelper.GetIndianTime(),
             UserId = user.Id
         };
     }

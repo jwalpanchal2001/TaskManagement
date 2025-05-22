@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Newtonsoft.Json;
 using TaskManagement.Entity.Model;
 using TaskManagement.Model.Dto;
@@ -23,15 +24,9 @@ public class AdminController : Controller
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        try
-        {
-            var users = await _userService.GetAllUsersAsync();
-            return View(users);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return RedirectToAction("Login", "Account");
-        }
+
+        var users = await _userService.GetAllUsersAsync();
+        return View(users);
     }
 
     [Authorize(Roles = "Admin")]
@@ -184,34 +179,23 @@ public class AdminController : Controller
 
     #endregion
 
+
+
+
     #region Task 
 
-    [Authorize(Roles = "Admin")]
-    [HttpGet]
-    public async Task<IActionResult> TaskIndex(
-      [FromQuery] int? assignedToId = null,
-      [FromQuery] int? statusId = null,
-      [FromQuery] DateTime? startDate = null,
-      [FromQuery] DateTime? endDate = null,
-      [FromQuery] string searchTerm = null,
-      [FromQuery] string sortBy = "DueDate",
-      [FromQuery] string sortOrder = "desc")
+    public async Task<IActionResult> TaskIndex([FromQuery] TaskFilterModel filter)
     {
         try
         {
             ViewBag.Users = await _userService.GetAllUsersAsync();
             ViewBag.TaskStatuses = await _taskService.GetTaskStatus();
 
-            var tasks = await _taskService.GetFilteredTasksAsync(
-                includeDeleted: false,
-                assignedToId: assignedToId,
-                statusId: statusId,
-                startDate: startDate,
-                endDate: endDate,
-                searchTerm: searchTerm);
+            var tasks = await _taskService.GetFilteredTasksAsync(filter);
 
-            var sortedTasks = SortTaskDtos(tasks, sortBy, sortOrder);
-            return View(sortedTasks);
+   
+
+            return View(tasks);
         }
         catch (UnauthorizedAccessException)
         {
@@ -222,6 +206,7 @@ public class AdminController : Controller
             return StatusCode(500, "Error loading tasks");
         }
     }
+
 
     private IEnumerable<TaskDto> SortTaskDtos(IEnumerable<TaskDto> tasks, string sortBy, string sortOrder)
     {
